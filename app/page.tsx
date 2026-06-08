@@ -2,9 +2,8 @@
 
 import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ShieldCheck, ArrowRight, ShieldAlert } from 'lucide-react'
+import { ShieldCheck, ShieldAlert } from 'lucide-react'
 
-// 1. Safe Loading Screen Component
 function LoadingScreen() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center font-mono text-sm text-[#6b7280]">
@@ -14,10 +13,9 @@ function LoadingScreen() {
   )
 }
 
-// 2. Safe Error Screen Component
 function ErrorScreen({ code }: { code: string }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-[#0a0a0a]">
       <h1 className="text-6xl font-bold font-mono text-[#ef4444] mb-4">ERR</h1>
       <h2 className="text-xl font-bold text-white mb-2">Diagnostic Expired or Invalid</h2>
       <p className="text-[#6b7280] text-sm">CODE: {code}. Please contact your audit consultant.</p>
@@ -25,12 +23,12 @@ function ErrorScreen({ code }: { code: string }) {
   )
 }
 
-// 3. Interactive Diagnostic Dashboard
 function Dashboard() {
   const searchParams = useSearchParams()
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [counter, setCounter] = useState(0)
+  const [sessionLoss, setSessionLoss] = useState(0) // New: Tracks money lost while viewing
   const [securityAction, setSecurityAction] = useState<'fix'|'ignore'>('fix')
 
   useEffect(() => {
@@ -49,7 +47,6 @@ function Dashboard() {
   useEffect(() => {
     if (!data || data.template_type !== "A") return
     
-    // Anchor counter to historic scan date
     const scanDate = new Date(`${data.scan_date}T00:00:00Z`)
     const now = new Date()
     const elapsedSeconds = Math.floor((now.getTime() - scanDate.getTime()) / 1000)
@@ -59,14 +56,14 @@ function Dashboard() {
 
     const interval = setInterval(() => {
       setCounter(prev => prev + lossPerSecond)
+      setSessionLoss(prev => prev + lossPerSecond) // Increment session loss
     }, 1000)
     return () => clearInterval(interval)
   }, [data])
 
   if (error) return <ErrorScreen code={error} />
-  if (!data) return <div className="min-h-screen flex items-center justify-center text-[#22c55e] font-mono animate-pulse">DECRYPTING PAYLOAD...</div>
+  if (!data) return <div className="min-h-screen flex items-center justify-center text-[#22c55e] font-mono animate-pulse bg-[#0a0a0a]">DECRYPTING PAYLOAD...</div>
 
-  // Elite Currency Formatter (Handles EUR vs USD correctly)
   const fmt = (n: number) => {
     const c = data.currency || 'USD'
     return new Intl.NumberFormat(c === 'EUR' ? 'de-DE' : 'en-US', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n)
@@ -75,9 +72,18 @@ function Dashboard() {
     const c = data.currency || 'USD'
     return new Intl.NumberFormat(c === 'EUR' ? 'de-DE' : 'en-US', { style: 'currency', currency: c, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
   }
+  const fmtMicro = (n: number) => {
+    const c = data.currency || 'USD'
+    return new Intl.NumberFormat(c === 'EUR' ? 'de-DE' : 'en-US', { style: 'currency', currency: c, minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n)
+  }
 
-  // Dynamic Tally.so URL with auto-filled Hidden Fields
+  // Dynamic Tally.so URL
   const tallyLink = `https://tally.so/r/aQzvEZ?store=${encodeURIComponent(data.store)}&domain=${encodeURIComponent(data.domain)}&coi=${data.monthly_coi}`
+
+  // FORCE REDIRECT FUNCTION (Fixes the CTA Bug)
+  const handleCTA = () => {
+    window.location.assign(tallyLink)
+  }
 
   // =====================================
   // TEMPLATE A: REVENUE LEAK (Silent Bleed)
@@ -99,7 +105,10 @@ function Dashboard() {
           <div className="bg-[#111111] rounded-xl p-6 border border-[#2a2a2a]">
             <span className="text-xs font-mono text-[#6b7280] uppercase mb-2 block">Revenue leaving {data.store} since scan</span>
             <div className="font-mono text-5xl font-bold text-[#ef4444]">{fmtLive(counter)}</div>
-            <p className="text-sm text-[#6b7280] mt-2">Running at {fmt(data.daily_coi)} per day</p>
+            <div className="text-xs text-[#ef4444] mt-2 font-mono animate-pulse">
+               Session Loss: {fmtMicro(sessionLoss)} evaporated while viewing this page
+            </div>
+            <p className="text-sm text-[#6b7280] mt-4">Running at {fmt(data.daily_coi)} per day</p>
           </div>
 
           <div className="bg-[#111111] rounded-xl p-6 border border-[#2a2a2a]">
@@ -110,7 +119,6 @@ function Dashboard() {
               <p className="text-[#ef4444]">&gt; ! {data.finding_detail_2}</p>
               <p className="text-[#22c55e]">✓ Detection: {data.service_id}</p>
             </div>
-            <p className="text-xs text-[#6b7280] mt-3">Translation: {data.plain_english}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -127,13 +135,17 @@ function Dashboard() {
           <div className="bg-[#111111]/40 border border-[#22c55e] rounded-xl p-5 flex gap-4">
             <ShieldCheck className="w-6 h-6 text-[#22c55e] flex-shrink-0" />
             <p className="text-sm text-[#6b7280]">
-              <strong className="text-white">Alex's Guarantee:</strong> If the full audit doesn't surface at least {fmt(data.fitd_price * 3)} in recoverable revenue, you pay nothing. I eat the cost.
+              <strong className="text-white">Alex's Guarantee:</strong> If the full audit doesn't surface at least {fmt(data.fitd_price * 3)} in recoverable revenue, you pay nothing.
             </p>
           </div>
 
-          <a href={tallyLink} target="_blank" className="w-full block text-center bg-[#22c55e] hover:bg-[#1ebd51] text-black font-bold py-4 rounded-xl transition-colors">
+          {/* FORCED JAVASCRIPT REDIRECT BUTTON */}
+          <button 
+            onClick={handleCTA} 
+            className="w-full block text-center bg-[#22c55e] hover:bg-[#1ebd51] text-black font-bold py-4 rounded-xl transition-colors cursor-pointer"
+          >
             Stop the Revenue Bleed →
-          </a>
+          </button>
         </main>
       </div>
     )
@@ -177,9 +189,13 @@ function Dashboard() {
             </div>
           )}
 
-          <a href={tallyLink} target="_blank" className="w-full block text-center bg-[#22c55e] hover:bg-[#1ebd51] text-black font-bold py-4 rounded-xl transition-colors">
+          {/* FORCED JAVASCRIPT REDIRECT BUTTON */}
+          <button 
+            onClick={handleCTA} 
+            className="w-full block text-center bg-[#22c55e] hover:bg-[#1ebd51] text-black font-bold py-4 rounded-xl transition-colors cursor-pointer"
+          >
             Request Emergency Security Review →
-          </a>
+          </button>
         </main>
       </div>
     )
