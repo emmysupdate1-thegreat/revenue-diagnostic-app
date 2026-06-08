@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-// Case-Sensitive Lowercase Component Imports
+// Synchronized Casing and Codenames
 import TemplateA from './components/templateA'
 import TemplateB from './components/templateB'
 import TemplateC from './components/templateC'
