@@ -13,7 +13,8 @@
     "react-dom": "^18.2.0",
     "next": "latest",
     "recharts": "^2.12.7",
-    "lucide-react": "^0.378.0"
+    "lucide-react": "^0.378.0",
+    "framer-motion": "^11.2.10"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
