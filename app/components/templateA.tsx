@@ -110,7 +110,6 @@ export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
     }, 100);
     return () => clearInterval(id);
   }, [scanEpoch, ratePerMs]);
-  
   /* ── TERMINAL ANIMATION ───────────────────────────────────── */
   useEffect(() => {
     // Build script once at mount — props are stable for the component's life
