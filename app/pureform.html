@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forensic Revenue Diagnostic — PureForm Nutrition</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%2322c55e%22/></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ───────────────────────────────────────────────────
+       CSS CUSTOM PROPERTIES
+    ─────────────────────────────────────────────────── */
+    :root {
+      --green:  #22c55e;
+      --red:    #ef4444;
+      --amber:  #f59e0b;
+      --bg:     #0a0a0a;
+      --card:   #111111;
+      --border: #2a2a2a;
+    }
+
+    /* ───────────────────────────────────────────────────
+       BASE RESET
+    ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      color: #e5e5e5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    /* ───────────────────────────────────────────────────
+       TYPOGRAPHY UTILITY
+    ─────────────────────────────────────────────────── */
+    .mono {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    /* ───────────────────────────────────────────────────
+       CARD
+    ─────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    /* ───────────────────────────────────────────────────
+       GSAP INITIAL STATE — sections start invisible
+    ─────────────────────────────────────────────────── */
+    .fade-item {
+      opacity: 0;
+    }
+
+    /* ───────────────────────────────────────────────────
+       PULSING RED COUNTER
+    ─────────────────────────────────────────────────── */
+    .pulse-red {
+      animation: pulseRed 2.4s ease-in-out infinite;
+    }
+    @keyframes pulseRed {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+
+    /* ───────────────────────────────────────────────────
+       STATUS DOT (blinking red indicator)
+    ─────────────────────────────────────────────────── */
+    .dot-live {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+      animation: dotBlink 1.6s ease-in-out infinite;
+    }
+    @keyframes dotBlink {
+      0%, 100% { opacity: 1; box-shadow: 0 0 5px 1px var(--red); }
+      50%       { opacity: 0.15; box-shadow: none; }
+    }
+
+    /* ───────────────────────────────────────────────────
+       FORENSIC TERMINAL
+    ─────────────────────────────────────────────────── */
+    .terminal-box {
+      background: #030303;
+      border: 1px solid #1b1b1b;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    /* CRT scanlines overlay */
+    .terminal-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(255, 255, 255, 0.011) 3px,
+        rgba(255, 255, 255, 0.011) 4px
+      );
+      pointer-events: none;
+      z-index: 3;
+    }
+    .terminal-inner {
+      position: relative;
+      z-index: 2;
+      padding: 16px 18px 18px;
+    }
+    /* Terminal chrome bar */
+    .terminal-chrome {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #181818;
+    }
+    .t-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* Blinking block cursor */
+    .cursor-blink::after {
+      content: '█';
+      color: var(--green);
+      font-size: 0.8em;
+      animation: cursorBlink 1s step-end infinite;
+      margin-left: 4px;
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ───────────────────────────────────────────────────
+       GAP ANALYSIS BARS
+    ─────────────────────────────────────────────────── */
+    .bar-track {
+      height: 36px;
+      background: #161616;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 4px;
+      transition: width 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .bar-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      pointer-events: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* ───────────────────────────────────────────────────
+       CTA BUTTON — glowing green hover
+    ─────────────────────────────────────────────────── */
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--green);
+      color: #000;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: box-shadow 0.28s ease, transform 0.18s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .cta-btn:hover {
+      background: #17a84a;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 14px rgba(34, 197, 94, 0.6),
+        0 0 32px rgba(34, 197, 94, 0.35),
+        0 0 64px rgba(34, 197, 94, 0.18);
+    }
+    .cta-btn:active { transform: translateY(0); }
+
+    /* ───────────────────────────────────────────────────
+       STICKY FOOTER
+    ─────────────────────────────────────────────────── */
+    #sticky-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 10, 0.97);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border);
+      z-index: 9999;
+      padding: 11px 16px 13px;
+    }
+
+    /* ───────────────────────────────────────────────────
+       CARD ACCENT LINES
+    ─────────────────────────────────────────────────── */
+    .accent-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* ───────────────────────────────────────────────────
+       SEVERITY BADGE
+    ─────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* ───────────────────────────────────────────────────
+       RESPONSIVE CONTAINER UTILITY
+    ─────────────────────────────────────────────────── */
+    .wrap {
+      max-width: 672px;
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    @media (min-width: 768px) {
+      .wrap { padding-left: 24px; padding-right: 24px; }
+    }
+  </style>
+</head>
+
+<body class="pb-28">
+
+  <!-- ══════════════════════════════════════════════════════
+       §1  HEADER
+  ══════════════════════════════════════════════════════ -->
+  <header class="fade-item" style="border-bottom: 1px solid var(--border);">
+    <div class="wrap py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="dot-live"></span>
+        <span class="mono text-xs tracking-widest" style="color:#414141;">
+          DIAGNOSTIC · pureformnutrition.co.uk
+        </span>
+      </div>
+      <span class="mono text-xs tracking-wide" style="color:#333;">REF: GHO-W01</span>
+    </div>
+  </header>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       MAIN CONTENT STREAM
+  ══════════════════════════════════════════════════════ -->
+  <main class="wrap py-8" style="display:flex;flex-direction:column;gap:24px;">
+
+
+    <!-- ────────────────────────────────────────────────────
+         §2  HERO
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item">
+
+      <!-- Badges row -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <span class="badge" style="background:rgba(239,68,68,0.09);border:1px solid rgba(239,68,68,0.24);color:var(--red);">
+          ● CRITICAL SEVERITY
+        </span>
+        <span class="badge" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);color:var(--amber);">
+          ⚠ CVE-2026-1926 ACTIVE
+        </span>
+      </div>
+
+      <!-- Headline -->
+      <h1 style="font-size:clamp(1.45rem,5vw,1.9rem);font-weight:900;line-height:1.2;letter-spacing:-0.025em;margin-bottom:12px;">
+        We found&nbsp;
+        <span class="mono" style="color:var(--red);">£28,452</span>
+        &nbsp;leaving<br>PureForm Nutrition every year.
+      </h1>
+
+      <!-- Technical finding -->
+      <p class="mono" style="font-size:0.8rem;color:var(--amber);line-height:1.6;margin-bottom:12px;">
+        WooCommerce Subscriptions v1.8.9 detected. CVE-2026-1926 Active.
+      </p>
+
+      <!-- Meta -->
+      <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <i data-lucide="calendar" style="width:11px;height:11px;color:#3a3a3a;"></i>
+          <span class="mono" style="font-size:0.68rem;color:#3a3a3a;">Scan completed: 02 JUN 2026 — 14:23 UTC</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <i data-lucide="hash" style="width:11px;height:11px;color:#3a3a3a;"></i>
+          <span class="mono" style="font-size:0.68rem;color:#3a3a3a;">WC Subscriptions Silent Failure · W01</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §3  LIVE REVENUE LOSS COUNTER
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item card" style="padding:22px 20px;position:relative;overflow:hidden;">
+      <div class="accent-line" style="background:var(--red);"></div>
+
+      <!-- Section header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i data-lucide="activity" style="width:14px;height:14px;color:var(--red);"></i>
+          <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">LIVE REVENUE HAEMORRHAGE</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="dot-live" style="width:6px;height:6px;"></span>
+          <span class="mono" style="font-size:0.65rem;color:#333;letter-spacing:0.08em;">LIVE</span>
+        </div>
+      </div>
+
+      <!-- Main counter -->
+      <div style="text-align:center;padding:8px 0 12px;">
+        <div id="mainCounter"
+             class="mono pulse-red"
+             style="font-size:clamp(2.2rem,10vw,3.8rem);font-weight:700;color:var(--red);line-height:1;letter-spacing:-0.02em;">
+          £0.00
+        </div>
+        <div class="mono" style="font-size:0.7rem;color:#3e3e3e;margin-top:8px;">
+          lost since midnight on 02 Jun 2026
+        </div>
+      </div>
+
+      <!-- Session micro-counter -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;text-align:center;">
+        <span class="mono" style="font-size:0.7rem;color:#3e3e3e;">Session Loss:&nbsp;</span>
+        <span id="sessionCounter" class="mono" style="font-size:0.7rem;font-weight:600;color:var(--red);">£0.0000</span>
+        <span class="mono" style="font-size:0.7rem;color:#333;">&nbsp;evaporated while viewing this page</span>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:18px;">
+        <div style="text-align:center;padding:10px 8px;">
+          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--amber);">£79</div>
+          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per day</div>
+        </div>
+        <div style="text-align:center;padding:10px 8px;border-left:1px solid var(--border);border-right:1px solid var(--border);">
+          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--amber);">£2,371</div>
+          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per month</div>
+        </div>
+        <div style="text-align:center;padding:10px 8px;">
+          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--red);">£28,452</div>
+          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per year</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §4  FORENSIC EVIDENCE TERMINAL
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item">
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <i data-lucide="terminal" style="width:13px;height:13px;color:var(--green);"></i>
+        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">FORENSIC EVIDENCE LOG</span>
+      </div>
+
+      <!-- Terminal window -->
+      <div class="terminal-box">
+        <div class="terminal-inner">
+
+          <!-- Window chrome -->
+          <div class="terminal-chrome">
+            <span class="t-dot" style="background:#ef4444;"></span>
+            <span class="t-dot" style="background:#f59e0b;"></span>
+            <span class="t-dot" style="background:#22c55e;"></span>
+            <span class="mono" style="font-size:0.65rem;color:#252525;margin-left:8px;">
+              forensic_scan.log — pureformnutrition.co.uk
+            </span>
+          </div>
+
+          <!-- Log lines — all mono, manually spaced for column alignment -->
+          <div class="mono" style="font-size:0.72rem;line-height:1.8;display:flex;flex-direction:column;gap:0;">
+
+            <div>
+              <span style="color:#272727;">[14:23:01]&nbsp;</span>
+              <span style="color:var(--green);">SCAN_INIT&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:#4e4e4e;">target: pureformnutrition.co.uk</span>
+            </div>
+
+            <div>
+              <span style="color:#272727;">[14:23:04]&nbsp;</span>
+              <span style="color:var(--amber);">DETECT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:#4e4e4e;">WooCommerce Subscriptions v1.8.9 found</span>
+            </div>
+
+            <div style="margin-top:8px;">
+              <span style="color:#272727;">[14:23:07]&nbsp;</span>
+              <span style="color:var(--red);font-weight:700;">CRITICAL&nbsp;&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:var(--red);">Vulnerability CVE-2026-1926 (CVSS 7.5) — active</span>
+            </div>
+
+            <div>
+              <span style="color:#272727;">[14:23:09]&nbsp;</span>
+              <span style="color:var(--amber);">WARNING&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:#818181;">Sybre-Waaijer subscription database desync identified</span>
+            </div>
+
+            <div>
+              <span style="color:#272727;">[14:23:11]&nbsp;</span>
+              <span style="color:var(--red);font-weight:700;">CRITICAL&nbsp;&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:var(--red);">Stripe gateway renewals failing silently — zero database logs</span>
+            </div>
+
+            <div style="margin-top:8px;">
+              <span style="color:#272727;">[14:23:14]&nbsp;</span>
+              <span style="color:var(--green);">COST_CALC&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:#4e4e4e;">Monthly haemorrhage:&nbsp;</span>
+              <span style="color:var(--red);font-weight:700;">£2,371.00</span>
+            </div>
+
+            <div>
+              <span style="color:#272727;">[14:23:15]&nbsp;</span>
+              <span style="color:var(--green);">REPORT_OK&nbsp;&nbsp;</span>
+              <span style="color:#333;">›&nbsp;</span>
+              <span style="color:#4e4e4e;">Diagnostic ready</span>
+              <span class="cursor-blink"></span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Plain-English translation -->
+      <div class="card" style="margin-top:10px;padding:16px;border-left:3px solid var(--amber);border-radius:10px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <i data-lucide="alert-triangle" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:2px;"></i>
+          <div>
+            <div class="mono" style="font-size:0.65rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:8px;">
+              PLAIN ENGLISH
+            </div>
+            <p style="font-size:0.85rem;color:#b5b5b5;line-height:1.65;">
+              Your payment processor is rejecting specific renewals, but WooCommerce still thinks they are active.
+              <strong style="color:#f0f0f0;">You are shipping products to customers who have not paid.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §5  GAP ANALYSIS CHART
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item card" style="padding:22px 20px;">
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:22px;">
+        <i data-lucide="bar-chart-2" style="width:13px;height:13px;color:var(--green);"></i>
+        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">
+          SUBSCRIPTION HEALTH — GAP ANALYSIS
+        </span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- PureForm Nutrition bar -->
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+            <div>
+              <span style="font-size:0.88rem;font-weight:600;color:#e5e5e5;">PureForm Nutrition</span>
+              <span class="mono" style="font-size:0.7rem;color:#444;margin-left:8px;">Current State</span>
+            </div>
+            <span class="mono" style="font-size:1.2rem;font-weight:700;color:var(--red);">
+              34<span style="font-size:0.75rem;color:#3a3a3a;">/100</span>
+            </span>
+          </div>
+          <div class="bar-track">
+            <div id="storeBar" class="bar-fill" style="background:var(--red);"></div>
+            <div class="bar-label" style="color:rgba(255,255,255,0.78);">34 — Critical Risk Zone</div>
+          </div>
+        </div>
+
+        <!-- Industry Benchmark bar -->
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+            <div>
+              <span style="font-size:0.88rem;font-weight:600;color:#e5e5e5;">Industry Benchmark</span>
+              <span class="mono" style="font-size:0.7rem;color:#444;margin-left:8px;">Healthy Stores</span>
+            </div>
+            <span class="mono" style="font-size:1.2rem;font-weight:700;color:var(--green);">
+              71<span style="font-size:0.75rem;color:#3a3a3a;">/100</span>
+            </span>
+          </div>
+          <div class="bar-track">
+            <div id="industryBar" class="bar-fill" style="background:var(--green);"></div>
+            <div class="bar-label" style="color:rgba(0,0,0,0.82);">71 — Healthy Baseline</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+        <p style="font-size:0.78rem;color:#4a4a4a;line-height:1.6;">
+          <span style="color:var(--amber);font-weight:600;">37-point gap</span> below industry benchmark.
+          Stores in the critical risk zone (&lt;40) average
+          <span style="color:var(--red);">£2,100–£3,800/month</span> in silent subscription revenue loss.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §6  INVESTMENT COMPARISON
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item">
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <i data-lucide="scale" style="width:13px;height:13px;color:var(--green);"></i>
+        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">THE REAL COST OF WAITING</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+        <!-- Monthly Loss card -->
+        <div class="card" style="padding:18px 16px;position:relative;overflow:hidden;border-color:rgba(239,68,68,0.28);">
+          <div class="accent-line" style="background:var(--red);"></div>
+          <div class="mono" style="font-size:0.65rem;color:#444;margin-bottom:6px;letter-spacing:0.08em;">MONTHLY LOSS</div>
+          <div class="mono" style="font-size:clamp(1.5rem,5.5vw,2.1rem);font-weight:700;color:var(--red);line-height:1;letter-spacing:-0.02em;">
+            £2,371
+          </div>
+          <p style="font-size:0.75rem;color:#5a5a5a;margin-top:8px;line-height:1.55;">
+            Bleeding every 30 days. Recurring. Invisible.
+          </p>
+          <div class="mono" style="font-size:0.65rem;color:#2e2e2e;margin-top:10px;">
+            × 12 months = £28,452
+          </div>
+        </div>
+
+        <!-- One-Time Fix card -->
+        <div class="card" style="padding:18px 16px;position:relative;overflow:hidden;border-color:rgba(34,197,94,0.28);">
+          <div class="accent-line" style="background:var(--green);"></div>
+          <div class="mono" style="font-size:0.65rem;color:#444;margin-bottom:6px;letter-spacing:0.08em;">ONE-TIME FIX</div>
+          <div class="mono" style="font-size:clamp(1.5rem,5.5vw,2.1rem);font-weight:700;color:var(--green);line-height:1;letter-spacing:-0.02em;">
+            £997
+          </div>
+          <p style="font-size:0.75rem;color:#5a5a5a;margin-top:8px;line-height:1.55;">
+            Paid once. Bleeding stops permanently.
+          </p>
+          <div class="mono" style="font-size:0.65rem;color:var(--green);margin-top:10px;">
+            ROI in &lt; 13 days
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Break-even callout -->
+      <div class="card" style="margin-top:10px;padding:12px 16px;text-align:center;background:#0d0d0d;">
+        <p class="mono" style="font-size:0.73rem;color:#505050;line-height:1.6;">
+          At <span style="color:#ddd;font-weight:600;">£79/day</span> bleed rate, this audit pays for itself in exactly
+          <span style="color:var(--green);font-weight:700;">12.6 days</span>.
+          Every day you wait costs <span style="color:var(--red);font-weight:700;">£79</span> more.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §7  ALEX'S GUARANTEE
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item"
+             style="border-radius:12px;padding:22px 20px;position:relative;overflow:hidden;
+                    background:rgba(34,197,94,0.03);
+                    border:1px solid rgba(34,197,94,0.18);">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);border-radius:12px 12px 0 0;"></div>
+
+      <div style="display:flex;align-items:flex-start;gap:16px;">
+
+        <!-- Shield icon -->
+        <div style="width:46px;height:46px;border-radius:50%;background:rgba(34,197,94,0.07);
+                    border:1px solid rgba(34,197,94,0.2);display:flex;align-items:center;
+                    justify-content:center;flex-shrink:0;">
+          <i data-lucide="shield-check" style="width:22px;height:22px;color:var(--green);"></i>
+        </div>
+
+        <div style="flex:1;min-width:0;">
+          <div class="mono" style="font-size:0.65rem;color:var(--green);letter-spacing:0.1em;margin-bottom:8px;">
+            ALEX'S 3× ROI GUARANTEE
+          </div>
+          <h3 style="font-size:0.96rem;font-weight:700;color:#fff;letter-spacing:-0.01em;margin-bottom:10px;line-height:1.35;">
+            If we don't recover 3× your investment, you pay nothing.
+          </h3>
+          <p style="font-size:0.82rem;color:#6a6a6a;line-height:1.65;margin-bottom:14px;">
+            We forensically resolve every identified failure point. If the recovered revenue doesn't exceed
+            <strong style="color:#d5d5d5;">£2,991</strong> within 90 days of remediation, we refund 100% of
+            the £997 audit fee. No questions. No clauses. No risk.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
+              <span style="font-size:0.78rem;color:var(--green);">3× ROI guaranteed or full refund issued</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
+              <span style="font-size:0.78rem;color:var(--green);">Measurable results within 90 days of remediation</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
+              <span style="font-size:0.78rem;color:var(--green);">Zero financial risk to PureForm Nutrition</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ────────────────────────────────────────────────────
+         §8  PRIMARY CTA
+    ──────────────────────────────────────────────────── -->
+    <section class="fade-item" style="text-align:center;padding-bottom:8px;">
+
+      <div class="mono" style="font-size:0.65rem;color:#2e2e2e;letter-spacing:0.1em;margin-bottom:12px;">
+        YOUR NEXT MOVE
+      </div>
+
+      <a href="https://tally.so/r/aQzvEZ?store=PureForm+Nutrition&coi=2371"
+         class="cta-btn"
+         style="width:100%;padding:16px 24px;border-radius:12px;font-size:1rem;letter-spacing:0.01em;">
+        Stop the Revenue Bleed →
+      </a>
+
+      <p class="mono" style="font-size:0.7rem;color:#303030;margin-top:12px;">
+        Takes 3 minutes. Results within 48 hours. Zero commitment.
+      </p>
+
+      <!-- Trust signals -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:16px;">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <i data-lucide="lock" style="width:11px;height:11px;color:#282828;"></i>
+          <span class="mono" style="font-size:0.65rem;color:#282828;">Encrypted</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <i data-lucide="eye-off" style="width:11px;height:11px;color:#282828;"></i>
+          <span class="mono" style="font-size:0.65rem;color:#282828;">Confidential</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <i data-lucide="zap" style="width:11px;height:11px;color:#282828;"></i>
+          <span class="mono" style="font-size:0.65rem;color:#282828;">48hr turnaround</span>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       STICKY FOOTER
+  ══════════════════════════════════════════════════════ -->
+  <div id="sticky-footer">
+    <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+
+      <!-- Live counter block -->
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span class="dot-live" style="width:6px;height:6px;"></span>
+          <span class="mono" style="font-size:0.62rem;color:#333;letter-spacing:0.06em;">Loss since scan date:</span>
+        </div>
+        <div id="footerCounter"
+             class="mono pulse-red"
+             style="font-size:1.05rem;font-weight:700;color:var(--red);letter-spacing:-0.01em;line-height:1;">
+          £0.00
+        </div>
+      </div>
+
+      <!-- Footer CTA -->
+      <a href="https://tally.so/r/aQzvEZ?store=PureForm+Nutrition&coi=2371"
+         class="cta-btn"
+         style="border-radius:10px;padding:10px 16px;font-size:0.82rem;flex-shrink:0;white-space:nowrap;">
+        Stop the Bleed →
+      </a>
+
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════════════════════════ -->
+  <script>
+
+    /* ─── DATA CONSTANTS ──────────────────────────────── */
+    const MONTHLY_COI    = 2371;
+    const LOSS_PER_SEC   = MONTHLY_COI / 30 / 24 / 3600; // ~£0.000915/s
+    const SCAN_MIDNIGHT  = new Date('2026-06-02T00:00:00Z').getTime(); // UTC midnight
+    const SESSION_START  = Date.now();
+
+    /* ─── DOM REFERENCES ──────────────────────────────── */
+    const mainCounterEl    = document.getElementById('mainCounter');
+    const footerCounterEl  = document.getElementById('footerCounter');
+    const sessionCounterEl = document.getElementById('sessionCounter');
+
+    /* ─── COUNTER UPDATE (every 100ms) ───────────────── */
+    function formatGBP(n) {
+      return '£' + n.toLocaleString('en-GB', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function updateCounters() {
+      const now = Date.now();
+
+      // Elapsed seconds since midnight 02 Jun 2026 UTC
+      const elapsed   = Math.max(0, (now - SCAN_MIDNIGHT) / 1000);
+      const totalLoss = elapsed * LOSS_PER_SEC;
+      const fmtTotal  = formatGBP(totalLoss);
+
+      mainCounterEl.textContent   = fmtTotal;
+      footerCounterEl.textContent = fmtTotal;
+
+      // Elapsed seconds since this page loaded
+      const sessionSec  = (now - SESSION_START) / 1000;
+      const sessionLoss = sessionSec * LOSS_PER_SEC;
+      sessionCounterEl.textContent = '£' + sessionLoss.toFixed(4);
+    }
+
+    setInterval(updateCounters, 100);
+    updateCounters(); // run immediately on load
+
+    /* ─── GAP BAR ANIMATION ───────────────────────────── */
+    function animateGapBars() {
+      const storeBar    = document.getElementById('storeBar');
+      const industryBar = document.getElementById('industryBar');
+      if (storeBar)    storeBar.style.width    = '34%';
+      if (industryBar) industryBar.style.width = '71%';
+    }
+
+    /* ─── GSAP STAGGER ANIMATION ─────────────────────── */
+    // All .fade-item elements slide up and fade in, staggered
+    gsap.fromTo(
+      '.fade-item',
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.65,
+        stagger: 0.11,
+        ease: 'power2.out',
+        delay: 0.18
+      }
+    );
+
+    // Fire gap bar animation once the chart section is visible
+    // (section #5, at stagger index 4 → starts ≈ 0.18 + 4×0.11 = 0.62s,
+    //  fully visible by ≈1.27s, so 1200ms is safe)
+    setTimeout(animateGapBars, 1200);
+
+    /* ─── LUCIDE ICONS ────────────────────────────────── */
+    lucide.createIcons();
+
+  </script>
+</body>
+</html>
