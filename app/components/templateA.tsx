@@ -90,10 +90,8 @@ export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
   // Page mount timestamp (never changes)
   const mountedAt = useRef<number>(Date.now());
 
-  /* ── STATE ────────────────────────────────────────────────── */
-  const [totalLost, setTotalLost] = useState<number>(
-    () => Math.max(0, (Date.now() - scanEpoch) * ratePerMs),
-  );
+ /* ── STATE ────────────────────────────────────────────────── */
+  const [totalLost, setTotalLost] = useState<number>(0);
   const [sessionLost, setSessionLost] = useState<number>(0);
 
   // Terminal reveal
@@ -102,6 +100,9 @@ export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
 
   /* ── LIVE TICKER (100 ms → smooth decimal motion) ─────────── */
   useEffect(() => {
+    mountedAt.current = Date.now(); // Sync client time safely
+    setTotalLost(Math.max(0, (Date.now() - scanEpoch) * ratePerMs)); // Set initial jump
+
     const id = setInterval(() => {
       const now = Date.now();
       setTotalLost(Math.max(0, (now - scanEpoch) * ratePerMs));
@@ -109,7 +110,7 @@ export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
     }, 100);
     return () => clearInterval(id);
   }, [scanEpoch, ratePerMs]);
-
+  
   /* ── TERMINAL ANIMATION ───────────────────────────────────── */
   useEffect(() => {
     // Build script once at mount — props are stable for the component's life
@@ -157,11 +158,13 @@ export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
     [fmt],
   );
 
-  /* ── GAP CHART DIMENSIONS ─────────────────────────────────── */
+ /* ── GAP CHART DIMENSIONS ─────────────────────────────────── */
   const CHART_H = 164; // px — total bar-area height
-  const maxScore  = Math.max(data.benchmark_store, data.benchmark_industry, 1);
-  const storeBarH = (data.benchmark_store  / maxScore) * CHART_H;
-  const industBarH = (data.benchmark_industry / maxScore) * CHART_H;
+  const safeStore = Number(data.benchmark_store) || 0;
+  const safeIndustry = Number(data.benchmark_industry) || 0;
+  const maxScore  = Math.max(safeStore, safeIndustry, 1);
+  const storeBarH = (safeStore / maxScore) * CHART_H;
+  const industBarH = (safeIndustry / maxScore) * CHART_H;
 
   /* ── SMOOTH-SCROLL TO COUNTER ─────────────────────────────── */
   const counterRef = useRef<HTMLDivElement>(null);
