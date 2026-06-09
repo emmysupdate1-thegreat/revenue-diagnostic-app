@@ -3,814 +3,859 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Forensic Revenue Diagnostic — PureForm Nutrition</title>
-
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22%2322c55e%22/></svg>">
-
+  <title>CRO Diagnostic — Peak Performance Gear | REF: CRO-T9</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
-          }
-        }
-      }
-    }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ───────────────────────────────────────────────────
-       CSS CUSTOM PROPERTIES
-    ─────────────────────────────────────────────────── */
     :root {
-      --green:  #22c55e;
-      --red:    #ef4444;
-      --amber:  #f59e0b;
-      --bg:     #0a0a0a;
-      --card:   #111111;
-      --border: #2a2a2a;
+      --bg:      #0a0a0a;
+      --card:    #111111;
+      --border:  #2a2a2a;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --yellow:  #eab308;
+      --text:    #e5e5e5;
+      --muted:   #888888;
+      --dim:     #444444;
+      --dimmer:  #2a2a2a;
     }
 
-    /* ───────────────────────────────────────────────────
-       BASE RESET
-    ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html { scroll-behavior: smooth; }
 
     body {
       background-color: var(--bg);
-      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-      color: #e5e5e5;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
     }
 
-    /* ───────────────────────────────────────────────────
-       TYPOGRAPHY UTILITY
-    ─────────────────────────────────────────────────── */
-    .mono {
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* ───────────────────────────────────────────────────
-       CARD
-    ─────────────────────────────────────────────── */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
+    /* ── CARDS ─────────────────────────────────────────── */
+    .card        { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .card-red    { background: #0e0404;     border: 1px solid #3a0a0a;       border-radius: 12px; }
+    .card-green  { background: #040e07;     border: 1px solid #0a3a1a;       border-radius: 12px; }
+    .card-ghost  { background: #0d0d0d;     border: 1px solid #1e1e1e;       border-radius: 8px; }
 
-    /* ───────────────────────────────────────────────────
-       GSAP INITIAL STATE — sections start invisible
-    ─────────────────────────────────────────────────── */
-    .fade-item {
-      opacity: 0;
-    }
-
-    /* ───────────────────────────────────────────────────
-       PULSING RED COUNTER
-    ─────────────────────────────────────────────────── */
-    .pulse-red {
-      animation: pulseRed 2.4s ease-in-out infinite;
-    }
-    @keyframes pulseRed {
+    /* ── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes blink {
       0%, 100% { opacity: 1; }
-      50%       { opacity: 0.45; }
+      50%       { opacity: 0.25; }
+    }
+    @keyframes pulse-red-bar {
+      0%, 100% { box-shadow: 0 0 6px rgba(239,68,68,0.7), 0 0 18px rgba(239,68,68,0.25); opacity: 1; }
+      50%       { box-shadow: 0 0 14px rgba(239,68,68,1),   0 0 36px rgba(239,68,68,0.4);  opacity: 0.82; }
+    }
+    @keyframes pulse-btn {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.45), 0 6px 28px rgba(34,197,94,0.25); }
+      60%       { box-shadow: 0 0 0 10px rgba(34,197,94,0),  0 6px 36px rgba(34,197,94,0.45); }
+    }
+    @keyframes counter-flash {
+      0%   { color: var(--red); }
+      100% { color: var(--red); }
+    }
+    @keyframes reveal-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
 
-    /* ───────────────────────────────────────────────────
-       STATUS DOT (blinking red indicator)
-    ─────────────────────────────────────────────────── */
-    .dot-live {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--red);
-      flex-shrink: 0;
-      animation: dotBlink 1.6s ease-in-out infinite;
-    }
-    @keyframes dotBlink {
-      0%, 100% { opacity: 1; box-shadow: 0 0 5px 1px var(--red); }
-      50%       { opacity: 0.15; box-shadow: none; }
-    }
+    .blink              { animation: blink 1.6s ease-in-out infinite; }
+    .pulse-red          { animation: pulse-red-bar 2.2s ease-in-out infinite; }
+    .pulse-btn          { animation: pulse-btn 2.8s ease-in-out infinite; }
+    .reveal-up          { animation: reveal-up 0.55s ease both; }
 
-    /* ───────────────────────────────────────────────────
-       FORENSIC TERMINAL
-    ─────────────────────────────────────────────────── */
-    .terminal-box {
-      background: #030303;
-      border: 1px solid #1b1b1b;
-      border-radius: 10px;
-      overflow: hidden;
-      position: relative;
-    }
-    /* CRT scanlines overlay */
-    .terminal-box::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 3px,
-        rgba(255, 255, 255, 0.011) 3px,
-        rgba(255, 255, 255, 0.011) 4px
-      );
-      pointer-events: none;
-      z-index: 3;
-    }
-    .terminal-inner {
-      position: relative;
-      z-index: 2;
-      padding: 16px 18px 18px;
-    }
-    /* Terminal chrome bar */
-    .terminal-chrome {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding-bottom: 12px;
-      margin-bottom: 14px;
-      border-bottom: 1px solid #181818;
-    }
-    .t-dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      display: inline-block;
-      flex-shrink: 0;
-    }
+    /* Staggered delays for reveal */
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.12s; }
+    .delay-3 { animation-delay: 0.20s; }
+    .delay-4 { animation-delay: 0.30s; }
 
-    /* Blinking block cursor */
-    .cursor-blink::after {
-      content: '█';
-      color: var(--green);
-      font-size: 0.8em;
-      animation: cursorBlink 1s step-end infinite;
-      margin-left: 4px;
-    }
-    @keyframes cursorBlink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0; }
-    }
-
-    /* ───────────────────────────────────────────────────
-       GAP ANALYSIS BARS
-    ─────────────────────────────────────────────────── */
-    .bar-track {
-      height: 36px;
-      background: #161616;
-      border-radius: 5px;
-      overflow: hidden;
-      position: relative;
-    }
-    .bar-fill {
-      height: 100%;
-      width: 0;
-      border-radius: 4px;
-      transition: width 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
-    }
-    .bar-label {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      pointer-events: none;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    /* ───────────────────────────────────────────────────
-       CTA BUTTON — glowing green hover
-    ─────────────────────────────────────────────────── */
-    .cta-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--green);
-      color: #000;
-      font-family: 'Inter', sans-serif;
-      font-weight: 700;
-      text-decoration: none;
+    /* ── DIVIDERS ───────────────────────────────────────── */
+    .divider {
       border: none;
-      cursor: pointer;
-      transition: box-shadow 0.28s ease, transform 0.18s ease, background 0.2s ease, color 0.2s ease;
-    }
-    .cta-btn:hover {
-      background: #17a84a;
-      color: #fff;
-      transform: translateY(-2px);
-      box-shadow:
-        0 0 14px rgba(34, 197, 94, 0.6),
-        0 0 32px rgba(34, 197, 94, 0.35),
-        0 0 64px rgba(34, 197, 94, 0.18);
-    }
-    .cta-btn:active { transform: translateY(0); }
-
-    /* ───────────────────────────────────────────────────
-       STICKY FOOTER
-    ─────────────────────────────────────────────────── */
-    #sticky-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(10, 10, 10, 0.97);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-top: 1px solid var(--border);
-      z-index: 9999;
-      padding: 11px 16px 13px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, #2a2a2a 25%, #2a2a2a 75%, transparent 100%);
+      margin: 4px 0;
     }
 
-    /* ───────────────────────────────────────────────────
-       CARD ACCENT LINES
-    ─────────────────────────────────────────────────── */
-    .accent-line {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      border-radius: 12px 12px 0 0;
-    }
-
-    /* ───────────────────────────────────────────────────
-       SEVERITY BADGE
-    ─────────────────────────────────────────────────── */
+    /* ── BADGES ─────────────────────────────────────────── */
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      padding: 3px 8px;
-      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
     }
 
-    /* ───────────────────────────────────────────────────
-       RESPONSIVE CONTAINER UTILITY
-    ─────────────────────────────────────────────────── */
-    .wrap {
-      max-width: 672px;
-      margin: 0 auto;
-      padding-left: 16px;
-      padding-right: 16px;
+    /* ── FUNNEL BARS ────────────────────────────────────── */
+    .bar-track {
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 28px;
+      position: relative;
     }
-    @media (min-width: 768px) {
-      .wrap { padding-left: 24px; padding-right: 24px; }
+    .bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.8s cubic-bezier(0.23,1,0.32,1);
+      position: relative;
+    }
+    .bar-fill-green  { background: linear-gradient(90deg, rgba(34,197,94,0.85), rgba(34,197,94,0.55)); border-right: 2px solid rgba(34,197,94,0.9); }
+    .bar-fill-yellow { background: linear-gradient(90deg, rgba(234,179,8,0.85), rgba(234,179,8,0.55)); border-right: 2px solid rgba(234,179,8,0.9); }
+    .bar-fill-red    { background: linear-gradient(90deg, rgba(239,68,68,0.95), rgba(239,68,68,0.7));  border-right: 2px solid rgba(239,68,68,1); }
+
+    /* ── CTA BUTTON ─────────────────────────────────────── */
+    .cta-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 15px 28px;
+      border-radius: 12px;
+      background: var(--green);
+      color: #000;
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      transition: background 0.18s ease, transform 0.18s ease;
+      cursor: pointer;
+    }
+    .cta-btn:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+    }
+    .cta-btn:active { transform: translateY(0); }
+
+    /* ── HEADER STICKY ──────────────────────────────────── */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #161616;
+    }
+
+    /* ── REVENUE LEAK TICKER ────────────────────────────── */
+    #leak-ticker {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--red);
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      min-width: 80px;
+      display: inline-block;
+    }
+
+    /* ── CHECKLIST ITEMS ────────────────────────────────── */
+    .audit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 8px;
+    }
+    .audit-item-failed { background: #0e0303; border: 1px solid #2d0a0a; }
+    .audit-item-passed { background: #030e05; border: 1px solid #0a2e14; }
+
+    .icon-circle {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .icon-circle-red   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.55); }
+    .icon-circle-green { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.55); }
+
+    /* ── COMPARISON CARDS ───────────────────────────────── */
+    .comp-card-red {
+      background: #0e0404;
+      border: 2px solid var(--red);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .comp-card-red::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 80%; height: 60%;
+      background: radial-gradient(ellipse at 50% 100%, rgba(239,68,68,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .comp-card-green {
+      background: #030e06;
+      border: 2px solid var(--green);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .comp-card-green::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 80%; height: 60%;
+      background: radial-gradient(ellipse at 50% 100%, rgba(34,197,94,0.12), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── GUARANTEE CARD ─────────────────────────────────── */
+    .guarantee-card {
+      background: #030e06;
+      border: 1px solid var(--green);
+      border-radius: 14px;
+      padding: 22px 20px;
+    }
+
+    /* ── STAT STRIP ─────────────────────────────────────── */
+    .stat-cell {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    /* ── SECTION LABEL ──────────────────────────────────── */
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 14px;
+      height: 1px;
+      background: var(--dimmer);
+    }
+
+    /* ── UPLIFT METRIC ──────────────────────────────────── */
+    .uplift-cell {
+      background: #030e06;
+      border: 1px solid #0e2e18;
+      border-radius: 10px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+
+    /* ── RATIO BAR ──────────────────────────────────────── */
+    .ratio-track {
+      background: #150303;
+      border: 1px solid #2a0a0a;
+      border-radius: 999px;
+      height: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ratio-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--green), #16a34a);
+      min-width: 7px;
+      box-shadow: 0 0 10px rgba(34,197,94,0.6);
+    }
+
+    /* ── SCROLLBAR ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    .site-footer {
+      border-top: 1px solid #161616;
+      padding: 16px 0 28px;
+      margin-top: 8px;
+    }
+
+    /* ── NOISE OVERLAY ──────────────────────────────────── */
+    #noise {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+      z-index: 9999;
+    }
+
+    /* Mobile overrides */
+    @media (max-width: 480px) {
+      .cta-btn { font-size: 14px; padding: 14px 20px; }
+      h1.hero-headline { font-size: 22px !important; }
     }
   </style>
 </head>
 
-<body class="pb-28">
+<body>
 
-  <!-- ══════════════════════════════════════════════════════
-       §1  HEADER
-  ══════════════════════════════════════════════════════ -->
-  <header class="fade-item" style="border-bottom: 1px solid var(--border);">
-    <div class="wrap py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <span class="dot-live"></span>
-        <span class="mono text-xs tracking-widest" style="color:#414141;">
-          DIAGNOSTIC · pureformnutrition.co.uk
-        </span>
-      </div>
-      <span class="mono text-xs tracking-wide" style="color:#333;">REF: GHO-W01</span>
+<!-- Subtle noise texture -->
+<div id="noise" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!--  STICKY HEADER                                       -->
+<!-- ════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <div class="max-w-2xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-1.5 h-1.5 rounded-full blink" style="background:var(--green);box-shadow:0 0 6px var(--green);"></div>
+      <span class="mono text-xs" style="color:var(--dim);letter-spacing:0.06em;">DIAGNOSTIC · peakperformance.co.uk</span>
     </div>
-  </header>
+    <span class="mono text-xs" style="color:var(--dim);letter-spacing:0.06em;">REF: CRO-T9</span>
+  </div>
+</header>
 
+<!-- ════════════════════════════════════════════════════ -->
+<!--  MAIN CONTENT                                        -->
+<!-- ════════════════════════════════════════════════════ -->
+<main class="max-w-2xl mx-auto px-4 md:px-6">
 
-  <!-- ══════════════════════════════════════════════════════
-       MAIN CONTENT STREAM
-  ══════════════════════════════════════════════════════ -->
-  <main class="wrap py-8" style="display:flex;flex-direction:column;gap:24px;">
+  <div class="py-8 space-y-6">
 
+    <!-- ─── HERO ─────────────────────────────────────── -->
+    <section class="space-y-5 reveal-up">
 
-    <!-- ────────────────────────────────────────────────────
-         §2  HERO
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item">
-
-      <!-- Badges row -->
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-        <span class="badge" style="background:rgba(239,68,68,0.09);border:1px solid rgba(239,68,68,0.24);color:var(--red);">
-          ● CRITICAL SEVERITY
+      <!-- Top pill badges -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="badge" style="background:#111;border:1px solid #2a2a2a;color:#555;">
+          <!-- Calendar icon -->
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><rect x="0.5" y="1" width="8" height="7.5" rx="1" stroke="#555" stroke-width="0.9"/><path d="M0.5 3.5h8" stroke="#555" stroke-width="0.9"/><path d="M2.5 0.5v1M6.5 0.5v1" stroke="#555" stroke-width="0.9" stroke-linecap="round"/></svg>
+          SCAN DATE: 09 JUN 2026
         </span>
-        <span class="badge" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);color:var(--amber);">
-          ⚠ CVE-2026-1926 ACTIVE
+        <span class="badge" style="background:#030e06;border:1px solid #0a2814;color:var(--green);">
+          <div class="w-1.5 h-1.5 rounded-full blink" style="background:var(--green);"></div>
+          LIVE REPORT
+        </span>
+        <span class="badge" style="background:#0e0404;border:1px solid #2d0a0a;color:var(--red);">
+          <!-- Warning icon -->
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M4.5 1L8 8H1L4.5 1Z" stroke="#ef4444" stroke-width="0.9" stroke-linejoin="round"/><path d="M4.5 4v1.5" stroke="#ef4444" stroke-width="0.9" stroke-linecap="round"/><circle cx="4.5" cy="6.8" r="0.4" fill="#ef4444"/></svg>
+          HIGH FRICTION DETECTED
         </span>
       </div>
+
+      <!-- Eyebrow -->
+      <p class="mono" style="font-size:10px;letter-spacing:0.14em;color:#3a3a3a;text-transform:uppercase;">
+        Conversion Friction Analysis — Peak Performance Gear
+      </p>
 
       <!-- Headline -->
-      <h1 style="font-size:clamp(1.45rem,5vw,1.9rem);font-weight:900;line-height:1.2;letter-spacing:-0.025em;margin-bottom:12px;">
-        We found&nbsp;
-        <span class="mono" style="color:var(--red);">£28,452</span>
-        &nbsp;leaving<br>PureForm Nutrition every year.
+      <h1 class="hero-headline font-extrabold tracking-tight" style="font-size:26px;line-height:1.22;color:#f0f0f0;">
+        You had <span style="color:#f0f0f0;border-bottom:2px solid #2a2a2a;">62,500 visitors</span> last month. Only <span style="color:var(--red);">1.2%</span> converted. The friction gap cost you <span style="color:var(--red);">1,000 sales</span>.
       </h1>
 
-      <!-- Technical finding -->
-      <p class="mono" style="font-size:0.8rem;color:var(--amber);line-height:1.6;margin-bottom:12px;">
-        WooCommerce Subscriptions v1.8.9 detected. CVE-2026-1926 Active.
+      <!-- Subhead -->
+      <p style="color:#6a6a6a;font-size:13.5px;line-height:1.7;max-width:540px;">
+        Your checkout architecture is actively eliminating buyers who arrived with purchase intent. This is measurable and fixable.
       </p>
 
-      <!-- Meta -->
-      <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;">
-        <div style="display:flex;align-items:center;gap:5px;">
-          <i data-lucide="calendar" style="width:11px;height:11px;color:#3a3a3a;"></i>
-          <span class="mono" style="font-size:0.68rem;color:#3a3a3a;">Scan completed: 02 JUN 2026 — 14:23 UTC</span>
+      <!-- KPI strip -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="stat-cell reveal-up delay-1">
+          <p class="mono" style="font-size:10px;color:var(--dim);margin-bottom:5px;">SESSIONS/MO</p>
+          <p style="font-weight:700;font-size:18px;color:var(--text);">62,500</p>
         </div>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <i data-lucide="hash" style="width:11px;height:11px;color:#3a3a3a;"></i>
-          <span class="mono" style="font-size:0.68rem;color:#3a3a3a;">WC Subscriptions Silent Failure · W01</span>
+        <div class="stat-cell reveal-up delay-2" style="background:#0e0303;border-color:#2d0a0a;">
+          <p class="mono" style="font-size:10px;color:var(--dim);margin-bottom:5px;">YOUR CVR</p>
+          <p style="font-weight:700;font-size:18px;color:var(--red);">1.2%</p>
         </div>
+        <div class="stat-cell reveal-up delay-3" style="background:#030e05;border-color:#0a2a12;">
+          <p class="mono" style="font-size:10px;color:var(--dim);margin-bottom:5px;">INDUSTRY MED.</p>
+          <p style="font-weight:700;font-size:18px;color:var(--green);">2.8%</p>
+        </div>
+      </div>
+
+      <!-- Live leak ticker -->
+      <div class="card-ghost p-3 flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full blink" style="background:var(--red);box-shadow:0 0 5px var(--red);"></div>
+          <span class="mono" style="font-size:11px;color:#666;">Revenue leaking right now:</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="mono" style="font-size:11px;color:#444;">£</span>
+          <span id="leak-ticker">0.00</span>
+          <span class="mono" style="font-size:10px;color:#444;">/sec</span>
+        </div>
+      </div>
+
+    </section>
+
+    <hr class="divider">
+
+    <!-- ─── FUNNEL DROP-OFF ───────────────────────────── -->
+    <section class="card p-5 space-y-4 reveal-up delay-1">
+
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 style="font-size:14px;font-weight:600;color:var(--text);">Checkout Funnel Attrition</h2>
+          <p class="mono" style="font-size:10px;color:#3a3a3a;margin-top:3px;">peakperformance.co.uk · Jun 2026</p>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <div class="w-1.5 h-1.5 rounded-full pulse-red" style="background:var(--red);border-radius:50%;"></div>
+          <span class="mono" style="font-size:10px;color:var(--red);">CRITICAL</span>
+        </div>
+      </div>
+
+      <div class="space-y-2.5" id="funnel">
+
+        <!-- Stage 01 — Page Visit -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="mono" style="font-size:10px;color:#333;">01</span>
+              <span style="font-size:13px;font-weight:500;color:#cccccc;">Page Visit</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="mono" style="font-size:10px;color:#444;">62,500 sessions</span>
+              <span class="mono" style="font-size:11px;font-weight:700;color:var(--green);min-width:36px;text-align:right;">100%</span>
+            </div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-green" id="bar-1" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Drop indicator -->
+        <div class="flex items-center gap-2" style="padding-left:22px;">
+          <div style="width:1px;height:14px;background:#222;"></div>
+          <span class="mono" style="font-size:10px;color:#3a3a3a;">↓ −68% drop-off at browse stage</span>
+        </div>
+
+        <!-- Stage 02 — Add to Cart -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="mono" style="font-size:10px;color:#333;">02</span>
+              <span style="font-size:13px;font-weight:500;color:#cccccc;">Add to Cart</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="mono" style="font-size:10px;color:#444;">20,000 sessions</span>
+              <span class="mono" style="font-size:11px;font-weight:700;color:var(--green);min-width:36px;text-align:right;">32%</span>
+            </div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-green" id="bar-2" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Drop indicator -->
+        <div class="flex items-center gap-2" style="padding-left:22px;">
+          <div style="width:1px;height:14px;background:#222;"></div>
+          <span class="mono" style="font-size:10px;color:#3a3a3a;">↓ −56% drop-off at product page</span>
+        </div>
+
+        <!-- Stage 03 — Initiate Checkout -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="mono" style="font-size:10px;color:#333;">03</span>
+              <span style="font-size:13px;font-weight:500;color:#cccccc;">Initiate Checkout</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="mono" style="font-size:10px;color:#444;">8,750 sessions</span>
+              <span class="mono" style="font-size:11px;font-weight:700;color:var(--yellow);min-width:36px;text-align:right;">14%</span>
+            </div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-yellow" id="bar-3" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Drop indicator — critical -->
+        <div class="flex items-center gap-2" style="padding-left:22px;">
+          <div style="width:1px;height:14px;background:#3a0a0a;"></div>
+          <div class="w-1.5 h-1.5 rounded-full blink" style="background:var(--red);"></div>
+          <span class="mono" style="font-size:10px;font-weight:600;color:var(--red);">↓ −91% CRITICAL CHECKOUT BLEED</span>
+        </div>
+
+        <!-- Stage 04 — Complete Purchase (CRITICAL) -->
+        <div class="p-2 rounded-lg" style="border:1px solid #3a0a0a;background:#0e0303;">
+          <div class="flex items-center justify-between mb-1.5 px-0.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="mono" style="font-size:10px;color:#4a2a2a;">04</span>
+              <span style="font-size:13px;font-weight:700;color:var(--red);">Complete Purchase</span>
+              <span class="badge" style="background:#1a0404;border:1px solid #3a0e0e;color:var(--red);font-size:9px;">FRICTION POINT</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="mono" style="font-size:10px;color:#4a2a2a;">750 orders</span>
+              <span id="cvr-badge" class="mono pulse-red" style="font-size:11px;font-weight:800;color:var(--red);min-width:36px;text-align:right;display:inline-block;border-radius:3px;padding:1px 3px;background:rgba(239,68,68,0.08);">1.2%</span>
+            </div>
+          </div>
+          <div class="bar-track" style="background:#120202;border-color:#2a0808;">
+            <div class="bar-fill bar-fill-red pulse-red" id="bar-4" style="width:0%;min-width:0px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benchmark row -->
+      <div class="card-ghost p-3 flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
+        <div>
+          <p class="mono" style="font-size:9px;color:#3a3a3a;margin-bottom:2px;">YOUR CVR</p>
+          <p style="font-weight:700;font-size:15px;color:var(--red);">1.2%</p>
+        </div>
+        <div style="width:1px;height:28px;background:#1e1e1e;"></div>
+        <div>
+          <p class="mono" style="font-size:9px;color:#3a3a3a;margin-bottom:2px;">INDUSTRY MEDIAN</p>
+          <p style="font-weight:700;font-size:15px;color:var(--green);">2.8%</p>
+        </div>
+        <div style="width:1px;height:28px;background:#1e1e1e;"></div>
+        <div>
+          <p class="mono" style="font-size:9px;color:#3a3a3a;margin-bottom:2px;">CVR GAP</p>
+          <p style="font-weight:700;font-size:15px;color:var(--red);">−1.6pp</p>
+        </div>
+        <div style="flex:1;min-width:80px;text-align:right;">
+          <span class="mono" style="font-size:10px;color:#3a3a3a;">= 1,000 orders/mo lost</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ─── FRICTION AUDIT CHECKLIST ─────────────────── -->
+    <section class="card p-5 space-y-4 reveal-up delay-2">
+
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 style="font-size:14px;font-weight:600;color:var(--text);">Friction Audit Checklist</h2>
+          <p class="mono" style="font-size:10px;color:#3a3a3a;margin-top:3px;">4 points audited · 3 critical failures identified</p>
+        </div>
+        <span class="badge flex-shrink-0" style="background:#1a0404;border:1px solid #3a1010;color:var(--red);">3 FAILED / 4</span>
+      </div>
+
+      <div class="space-y-2">
+
+        <!-- FAILED: Fuzzy Search -->
+        <div class="audit-item audit-item-failed">
+          <div class="icon-circle icon-circle-red">
+            <!-- X icon -->
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 2L7 7M7 2L2 7" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <p style="font-size:13px;font-weight:600;color:var(--text);">Fuzzy Search &amp; Autocomplete</p>
+              <span class="mono" style="font-size:10px;font-weight:700;color:var(--red);flex-shrink:0;">FAILED</span>
+            </div>
+            <p style="font-size:12px;color:#5a5a5a;margin-top:4px;line-height:1.5;">Zero autocomplete detected. Users who can't find products in under 3 seconds exit to a competitor — permanently.</p>
+          </div>
+        </div>
+
+        <!-- FAILED: Express Wallet Pay -->
+        <div class="audit-item audit-item-failed">
+          <div class="icon-circle icon-circle-red">
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 2L7 7M7 2L2 7" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <p style="font-size:13px;font-weight:600;color:var(--text);">Express Wallet Pay (Apple/Google)</p>
+              <span class="mono" style="font-size:10px;font-weight:700;color:var(--red);flex-shrink:0;">FAILED</span>
+            </div>
+            <p style="font-size:12px;color:#5a5a5a;margin-top:4px;line-height:1.5;">No 1-tap wallet payment detected. Forcing mobile users through a full form is the single largest driver of your 91% checkout drop.</p>
+          </div>
+        </div>
+
+        <!-- FAILED: Shipping Threshold -->
+        <div class="audit-item audit-item-failed">
+          <div class="icon-circle icon-circle-red">
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 2L7 7M7 2L2 7" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <p style="font-size:13px;font-weight:600;color:var(--text);">Dynamic Free Shipping Threshold UI</p>
+              <span class="mono" style="font-size:10px;font-weight:700;color:var(--red);flex-shrink:0;">FAILED</span>
+            </div>
+            <p style="font-size:12px;color:#5a5a5a;margin-top:4px;line-height:1.5;">No AOV-boosting progress bar detected. A "£X away from free shipping" nudge typically lifts AOV by 15–20% with zero ad spend.</p>
+          </div>
+        </div>
+
+        <!-- PASSED: Trust Signals -->
+        <div class="audit-item audit-item-passed">
+          <div class="icon-circle icon-circle-green">
+            <!-- Check icon -->
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <p style="font-size:13px;font-weight:600;color:var(--text);">Trust Signals near CTA</p>
+              <span class="mono" style="font-size:10px;font-weight:700;color:var(--green);flex-shrink:0;">PASSED</span>
+            </div>
+            <p style="font-size:12px;color:#4a5a4a;margin-top:4px;line-height:1.5;">Secure checkout badge and SSL indicator correctly positioned near primary call-to-action. This is doing its job.</p>
+          </div>
+        </div>
+
       </div>
     </section>
 
+    <!-- ─── UPLIFT CALCULATOR ─────────────────────────── -->
+    <section class="card p-5 space-y-4 reveal-up delay-3">
 
-    <!-- ────────────────────────────────────────────────────
-         §3  LIVE REVENUE LOSS COUNTER
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item card" style="padding:22px 20px;position:relative;overflow:hidden;">
-      <div class="accent-line" style="background:var(--red);"></div>
+      <div>
+        <h2 style="font-size:14px;font-weight:600;color:var(--text);">Conservative Uplift Projection</h2>
+        <p style="font-size:12px;color:#5a5a5a;margin-top:3px;">62,500 sessions/mo · £85 AOV · Floor-case estimate only</p>
+      </div>
 
-      <!-- Section header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i data-lucide="activity" style="width:14px;height:14px;color:var(--red);"></i>
-          <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">LIVE REVENUE HAEMORRHAGE</span>
+      <!-- Scenario pill -->
+      <div style="background:#040e07;border:1px solid #0e2e18;border-radius:8px;padding:12px 14px;">
+        <p style="font-size:13px;color:#aaaaaa;line-height:1.6;">
+          If conversion rate improves by a conservative
+          <span class="mono" style="color:#fff;font-weight:700;">+0.5%</span>
+          (from <span style="color:var(--red);font-weight:600;">1.2%</span> → <span style="color:var(--green);font-weight:600;">1.7%</span>), the math is straightforward:
+        </p>
+      </div>
+
+      <!-- Metric pair -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="uplift-cell">
+          <p class="mono" style="font-size:10px;color:#3a4a3a;margin-bottom:8px;">EXTRA ORDERS / MONTH</p>
+          <p style="font-size:42px;font-weight:900;color:var(--green);line-height:1;letter-spacing:-0.03em;">+312</p>
+          <p style="font-size:11px;color:#3a5a3a;margin-top:6px;">orders unlocked per month</p>
+        </div>
+        <div class="uplift-cell">
+          <p class="mono" style="font-size:10px;color:#3a4a3a;margin-bottom:8px;">ADDITIONAL ANNUAL REV.</p>
+          <p style="font-size:34px;font-weight:900;color:var(--green);line-height:1;letter-spacing:-0.03em;">£318,240</p>
+          <p style="font-size:11px;color:#3a5a3a;margin-top:6px;">at £85 AOV × 312 × 12</p>
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:#3a3a3a;line-height:1.6;">
+        ↑ Industry data places full friction removal at 1.0–3.0% CVR lift. This uses the floor. The ceiling of this projection is <span style="color:#5a5a5a;font-weight:500;">£1,912,500 / year</span>.
+      </p>
+
+    </section>
+
+    <!-- ─── INVESTMENT COMPARISON ─────────────────────── -->
+    <section class="space-y-3 reveal-up delay-4">
+
+      <div class="section-label">The Cost of Inaction vs. The Fix</div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <!-- Monthly Loss -->
+        <div class="comp-card-red">
+          <p class="mono" style="font-size:10px;color:var(--red);margin-bottom:10px;letter-spacing:0.08em;">MONTHLY FRICTION LOSS</p>
+          <p style="font-size:44px;font-weight:900;color:var(--red);line-height:1;letter-spacing:-0.04em;">£85,000</p>
+          <p style="font-size:12px;color:#5a3a3a;margin-top:8px;">leaking every single month</p>
+          <div style="width:40px;height:1px;background:#2a0808;margin:12px auto;"></div>
+          <p class="mono" style="font-size:10px;color:#4a2a2a;">£1,020,000 / year</p>
+          <p class="mono" style="font-size:10px;color:#4a2a2a;margin-top:3px;">1,000 lost orders/month</p>
+        </div>
+
+        <!-- One-Time Investment -->
+        <div class="comp-card-green">
+          <p class="mono" style="font-size:10px;color:var(--green);margin-bottom:10px;letter-spacing:0.08em;">ONE-TIME FIX INVESTMENT</p>
+          <p style="font-size:44px;font-weight:900;color:var(--green);line-height:1;letter-spacing:-0.04em;">£1,497</p>
+          <p style="font-size:12px;color:#3a5a3a;margin-top:8px;">paid once. results permanent.</p>
+          <div style="width:40px;height:1px;background:#0a2a14;margin:12px auto;"></div>
+          <p class="mono" style="font-size:10px;color:#2a4a2a;">56.8× ROI potential</p>
+          <p class="mono" style="font-size:10px;color:#2a4a2a;margin-top:3px;">full report in 7 days</p>
+        </div>
+
+      </div>
+
+      <!-- Ratio bar -->
+      <div class="card p-4 space-y-2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <p class="mono" style="font-size:10px;color:#3a3a3a;">SPEND RATIO — AUDIT vs. MONTHLY LOSS</p>
+          <p class="mono" style="font-size:10px;color:#3a3a3a;">1 : 56.8</p>
+        </div>
+        <div class="ratio-track">
+          <div class="ratio-fill" style="width:1.76%;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span class="mono" style="font-size:10px;color:var(--green);">▮ £1,497 audit</span>
+          <span class="mono" style="font-size:10px;color:var(--red);">£85,000 / month ▮</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ─── GUARANTEE ─────────────────────────────────── -->
+    <section class="guarantee-card reveal-up">
+
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <!-- Shield-check icon -->
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);margin-top:2px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2L3.5 5V10C3.5 13.58 6.35 16.9 10 17.97C13.65 16.9 16.5 13.58 16.5 10V5L10 2Z" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 10L9 12L13 8" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <p style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;">Alex's 3× ROI Guarantee</p>
+          <p style="font-size:13.5px;color:#bbbbbb;line-height:1.7;">
+            If our friction audit doesn't identify at least
+            <strong style="color:var(--green);">3× your audit cost</strong>
+            in actionable checkout improvements, you keep the full report for free.
+            <span style="color:var(--text);">I eat the cost.</span>
+          </p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #0e2e18;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L4.5 8.5L10 3" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:12px;color:#6a6a6a;">No contracts</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span class="dot-live" style="width:6px;height:6px;"></span>
-          <span class="mono" style="font-size:0.65rem;color:#333;letter-spacing:0.08em;">LIVE</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L4.5 8.5L10 3" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:12px;color:#6a6a6a;">7-day delivery</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L4.5 8.5L10 3" stroke="#22c55e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:12px;color:#6a6a6a;">Zero risk</span>
         </div>
       </div>
 
-      <!-- Main counter -->
-      <div style="text-align:center;padding:8px 0 12px;">
-        <div id="mainCounter"
-             class="mono pulse-red"
-             style="font-size:clamp(2.2rem,10vw,3.8rem);font-weight:700;color:var(--red);line-height:1;letter-spacing:-0.02em;">
-          £0.00
-        </div>
-        <div class="mono" style="font-size:0.7rem;color:#3e3e3e;margin-top:8px;">
-          lost since midnight on 02 Jun 2026
-        </div>
-      </div>
-
-      <!-- Session micro-counter -->
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;text-align:center;">
-        <span class="mono" style="font-size:0.7rem;color:#3e3e3e;">Session Loss:&nbsp;</span>
-        <span id="sessionCounter" class="mono" style="font-size:0.7rem;font-weight:600;color:var(--red);">£0.0000</span>
-        <span class="mono" style="font-size:0.7rem;color:#333;">&nbsp;evaporated while viewing this page</span>
-      </div>
-
-      <!-- Stats row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:18px;">
-        <div style="text-align:center;padding:10px 8px;">
-          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--amber);">£79</div>
-          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per day</div>
-        </div>
-        <div style="text-align:center;padding:10px 8px;border-left:1px solid var(--border);border-right:1px solid var(--border);">
-          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--amber);">£2,371</div>
-          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per month</div>
-        </div>
-        <div style="text-align:center;padding:10px 8px;">
-          <div class="mono" style="font-weight:700;font-size:1.1rem;color:var(--red);">£28,452</div>
-          <div style="font-size:0.7rem;color:#4a4a4a;margin-top:3px;">per year</div>
-        </div>
-      </div>
     </section>
 
+    <!-- ─── PRIMARY CTA ───────────────────────────────── -->
+    <section class="space-y-3 pb-2 reveal-up">
 
-    <!-- ────────────────────────────────────────────────────
-         §4  FORENSIC EVIDENCE TERMINAL
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item">
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <i data-lucide="terminal" style="width:13px;height:13px;color:var(--green);"></i>
-        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">FORENSIC EVIDENCE LOG</span>
-      </div>
-
-      <!-- Terminal window -->
-      <div class="terminal-box">
-        <div class="terminal-inner">
-
-          <!-- Window chrome -->
-          <div class="terminal-chrome">
-            <span class="t-dot" style="background:#ef4444;"></span>
-            <span class="t-dot" style="background:#f59e0b;"></span>
-            <span class="t-dot" style="background:#22c55e;"></span>
-            <span class="mono" style="font-size:0.65rem;color:#252525;margin-left:8px;">
-              forensic_scan.log — pureformnutrition.co.uk
-            </span>
-          </div>
-
-          <!-- Log lines — all mono, manually spaced for column alignment -->
-          <div class="mono" style="font-size:0.72rem;line-height:1.8;display:flex;flex-direction:column;gap:0;">
-
-            <div>
-              <span style="color:#272727;">[14:23:01]&nbsp;</span>
-              <span style="color:var(--green);">SCAN_INIT&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:#4e4e4e;">target: pureformnutrition.co.uk</span>
-            </div>
-
-            <div>
-              <span style="color:#272727;">[14:23:04]&nbsp;</span>
-              <span style="color:var(--amber);">DETECT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:#4e4e4e;">WooCommerce Subscriptions v1.8.9 found</span>
-            </div>
-
-            <div style="margin-top:8px;">
-              <span style="color:#272727;">[14:23:07]&nbsp;</span>
-              <span style="color:var(--red);font-weight:700;">CRITICAL&nbsp;&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:var(--red);">Vulnerability CVE-2026-1926 (CVSS 7.5) — active</span>
-            </div>
-
-            <div>
-              <span style="color:#272727;">[14:23:09]&nbsp;</span>
-              <span style="color:var(--amber);">WARNING&nbsp;&nbsp;&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:#818181;">Sybre-Waaijer subscription database desync identified</span>
-            </div>
-
-            <div>
-              <span style="color:#272727;">[14:23:11]&nbsp;</span>
-              <span style="color:var(--red);font-weight:700;">CRITICAL&nbsp;&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:var(--red);">Stripe gateway renewals failing silently — zero database logs</span>
-            </div>
-
-            <div style="margin-top:8px;">
-              <span style="color:#272727;">[14:23:14]&nbsp;</span>
-              <span style="color:var(--green);">COST_CALC&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:#4e4e4e;">Monthly haemorrhage:&nbsp;</span>
-              <span style="color:var(--red);font-weight:700;">£2,371.00</span>
-            </div>
-
-            <div>
-              <span style="color:#272727;">[14:23:15]&nbsp;</span>
-              <span style="color:var(--green);">REPORT_OK&nbsp;&nbsp;</span>
-              <span style="color:#333;">›&nbsp;</span>
-              <span style="color:#4e4e4e;">Diagnostic ready</span>
-              <span class="cursor-blink"></span>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Plain-English translation -->
-      <div class="card" style="margin-top:10px;padding:16px;border-left:3px solid var(--amber);border-radius:10px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <i data-lucide="alert-triangle" style="width:15px;height:15px;color:var(--amber);flex-shrink:0;margin-top:2px;"></i>
-          <div>
-            <div class="mono" style="font-size:0.65rem;color:var(--amber);letter-spacing:0.1em;margin-bottom:8px;">
-              PLAIN ENGLISH
-            </div>
-            <p style="font-size:0.85rem;color:#b5b5b5;line-height:1.65;">
-              Your payment processor is rejecting specific renewals, but WooCommerce still thinks they are active.
-              <strong style="color:#f0f0f0;">You are shipping products to customers who have not paid.</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- ────────────────────────────────────────────────────
-         §5  GAP ANALYSIS CHART
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item card" style="padding:22px 20px;">
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:22px;">
-        <i data-lucide="bar-chart-2" style="width:13px;height:13px;color:var(--green);"></i>
-        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">
-          SUBSCRIPTION HEALTH — GAP ANALYSIS
-        </span>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:20px;">
-
-        <!-- PureForm Nutrition bar -->
-        <div>
-          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
-            <div>
-              <span style="font-size:0.88rem;font-weight:600;color:#e5e5e5;">PureForm Nutrition</span>
-              <span class="mono" style="font-size:0.7rem;color:#444;margin-left:8px;">Current State</span>
-            </div>
-            <span class="mono" style="font-size:1.2rem;font-weight:700;color:var(--red);">
-              34<span style="font-size:0.75rem;color:#3a3a3a;">/100</span>
-            </span>
-          </div>
-          <div class="bar-track">
-            <div id="storeBar" class="bar-fill" style="background:var(--red);"></div>
-            <div class="bar-label" style="color:rgba(255,255,255,0.78);">34 — Critical Risk Zone</div>
-          </div>
-        </div>
-
-        <!-- Industry Benchmark bar -->
-        <div>
-          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
-            <div>
-              <span style="font-size:0.88rem;font-weight:600;color:#e5e5e5;">Industry Benchmark</span>
-              <span class="mono" style="font-size:0.7rem;color:#444;margin-left:8px;">Healthy Stores</span>
-            </div>
-            <span class="mono" style="font-size:1.2rem;font-weight:700;color:var(--green);">
-              71<span style="font-size:0.75rem;color:#3a3a3a;">/100</span>
-            </span>
-          </div>
-          <div class="bar-track">
-            <div id="industryBar" class="bar-fill" style="background:var(--green);"></div>
-            <div class="bar-label" style="color:rgba(0,0,0,0.82);">71 — Healthy Baseline</div>
-          </div>
-        </div>
-
-      </div>
-
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-        <p style="font-size:0.78rem;color:#4a4a4a;line-height:1.6;">
-          <span style="color:var(--amber);font-weight:600;">37-point gap</span> below industry benchmark.
-          Stores in the critical risk zone (&lt;40) average
-          <span style="color:var(--red);">£2,100–£3,800/month</span> in silent subscription revenue loss.
-        </p>
-      </div>
-    </section>
-
-
-    <!-- ────────────────────────────────────────────────────
-         §6  INVESTMENT COMPARISON
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item">
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <i data-lucide="scale" style="width:13px;height:13px;color:var(--green);"></i>
-        <span class="mono" style="font-size:0.68rem;color:#444;letter-spacing:0.1em;">THE REAL COST OF WAITING</span>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-
-        <!-- Monthly Loss card -->
-        <div class="card" style="padding:18px 16px;position:relative;overflow:hidden;border-color:rgba(239,68,68,0.28);">
-          <div class="accent-line" style="background:var(--red);"></div>
-          <div class="mono" style="font-size:0.65rem;color:#444;margin-bottom:6px;letter-spacing:0.08em;">MONTHLY LOSS</div>
-          <div class="mono" style="font-size:clamp(1.5rem,5.5vw,2.1rem);font-weight:700;color:var(--red);line-height:1;letter-spacing:-0.02em;">
-            £2,371
-          </div>
-          <p style="font-size:0.75rem;color:#5a5a5a;margin-top:8px;line-height:1.55;">
-            Bleeding every 30 days. Recurring. Invisible.
-          </p>
-          <div class="mono" style="font-size:0.65rem;color:#2e2e2e;margin-top:10px;">
-            × 12 months = £28,452
-          </div>
-        </div>
-
-        <!-- One-Time Fix card -->
-        <div class="card" style="padding:18px 16px;position:relative;overflow:hidden;border-color:rgba(34,197,94,0.28);">
-          <div class="accent-line" style="background:var(--green);"></div>
-          <div class="mono" style="font-size:0.65rem;color:#444;margin-bottom:6px;letter-spacing:0.08em;">ONE-TIME FIX</div>
-          <div class="mono" style="font-size:clamp(1.5rem,5.5vw,2.1rem);font-weight:700;color:var(--green);line-height:1;letter-spacing:-0.02em;">
-            £997
-          </div>
-          <p style="font-size:0.75rem;color:#5a5a5a;margin-top:8px;line-height:1.55;">
-            Paid once. Bleeding stops permanently.
-          </p>
-          <div class="mono" style="font-size:0.65rem;color:var(--green);margin-top:10px;">
-            ROI in &lt; 13 days
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Break-even callout -->
-      <div class="card" style="margin-top:10px;padding:12px 16px;text-align:center;background:#0d0d0d;">
-        <p class="mono" style="font-size:0.73rem;color:#505050;line-height:1.6;">
-          At <span style="color:#ddd;font-weight:600;">£79/day</span> bleed rate, this audit pays for itself in exactly
-          <span style="color:var(--green);font-weight:700;">12.6 days</span>.
-          Every day you wait costs <span style="color:var(--red);font-weight:700;">£79</span> more.
-        </p>
-      </div>
-    </section>
-
-
-    <!-- ────────────────────────────────────────────────────
-         §7  ALEX'S GUARANTEE
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item"
-             style="border-radius:12px;padding:22px 20px;position:relative;overflow:hidden;
-                    background:rgba(34,197,94,0.03);
-                    border:1px solid rgba(34,197,94,0.18);">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);border-radius:12px 12px 0 0;"></div>
-
-      <div style="display:flex;align-items:flex-start;gap:16px;">
-
-        <!-- Shield icon -->
-        <div style="width:46px;height:46px;border-radius:50%;background:rgba(34,197,94,0.07);
-                    border:1px solid rgba(34,197,94,0.2);display:flex;align-items:center;
-                    justify-content:center;flex-shrink:0;">
-          <i data-lucide="shield-check" style="width:22px;height:22px;color:var(--green);"></i>
-        </div>
-
-        <div style="flex:1;min-width:0;">
-          <div class="mono" style="font-size:0.65rem;color:var(--green);letter-spacing:0.1em;margin-bottom:8px;">
-            ALEX'S 3× ROI GUARANTEE
-          </div>
-          <h3 style="font-size:0.96rem;font-weight:700;color:#fff;letter-spacing:-0.01em;margin-bottom:10px;line-height:1.35;">
-            If we don't recover 3× your investment, you pay nothing.
-          </h3>
-          <p style="font-size:0.82rem;color:#6a6a6a;line-height:1.65;margin-bottom:14px;">
-            We forensically resolve every identified failure point. If the recovered revenue doesn't exceed
-            <strong style="color:#d5d5d5;">£2,991</strong> within 90 days of remediation, we refund 100% of
-            the £997 audit fee. No questions. No clauses. No risk.
-          </p>
-          <div style="display:flex;flex-direction:column;gap:7px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
-              <span style="font-size:0.78rem;color:var(--green);">3× ROI guaranteed or full refund issued</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
-              <span style="font-size:0.78rem;color:var(--green);">Measurable results within 90 days of remediation</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <i data-lucide="check-circle-2" style="width:13px;height:13px;color:var(--green);flex-shrink:0;"></i>
-              <span style="font-size:0.78rem;color:var(--green);">Zero financial risk to PureForm Nutrition</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- ────────────────────────────────────────────────────
-         §8  PRIMARY CTA
-    ──────────────────────────────────────────────────── -->
-    <section class="fade-item" style="text-align:center;padding-bottom:8px;">
-
-      <div class="mono" style="font-size:0.65rem;color:#2e2e2e;letter-spacing:0.1em;margin-bottom:12px;">
-        YOUR NEXT MOVE
-      </div>
-
-      <a href="https://tally.so/r/aQzvEZ?store=PureForm+Nutrition&coi=2371"
-         class="cta-btn"
-         style="width:100%;padding:16px 24px;border-radius:12px;font-size:1rem;letter-spacing:0.01em;">
-        Stop the Revenue Bleed →
+      <a href="https://tally.so/r/aQzvEZ?store=Peak+Performance&coi=85000"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="cta-btn pulse-btn"
+         aria-label="Eradicate Checkout Friction — Book Your CRO Audit">
+        Eradicate Checkout Friction Now &nbsp;→
       </a>
 
-      <p class="mono" style="font-size:0.7rem;color:#303030;margin-top:12px;">
-        Takes 3 minutes. Results within 48 hours. Zero commitment.
+      <p style="text-align:center;font-size:11px;color:#333;line-height:1.6;">
+        62,500 monthly visitors · £85,000 lost monthly · £1,497 to fix it permanently · 3× ROI guaranteed
       </p>
 
-      <!-- Trust signals -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:16px;">
-        <div style="display:flex;align-items:center;gap:5px;">
-          <i data-lucide="lock" style="width:11px;height:11px;color:#282828;"></i>
-          <span class="mono" style="font-size:0.65rem;color:#282828;">Encrypted</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <i data-lucide="eye-off" style="width:11px;height:11px;color:#282828;"></i>
-          <span class="mono" style="font-size:0.65rem;color:#282828;">Confidential</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <i data-lucide="zap" style="width:11px;height:11px;color:#282828;"></i>
-          <span class="mono" style="font-size:0.65rem;color:#282828;">48hr turnaround</span>
-        </div>
-      </div>
-
     </section>
 
-  </main>
+  </div><!-- /space-y-6 -->
 
-
-  <!-- ══════════════════════════════════════════════════════
-       STICKY FOOTER
-  ══════════════════════════════════════════════════════ -->
-  <div id="sticky-footer">
-    <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-
-      <!-- Live counter block -->
-      <div style="min-width:0;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-          <span class="dot-live" style="width:6px;height:6px;"></span>
-          <span class="mono" style="font-size:0.62rem;color:#333;letter-spacing:0.06em;">Loss since scan date:</span>
-        </div>
-        <div id="footerCounter"
-             class="mono pulse-red"
-             style="font-size:1.05rem;font-weight:700;color:var(--red);letter-spacing:-0.01em;line-height:1;">
-          £0.00
-        </div>
-      </div>
-
-      <!-- Footer CTA -->
-      <a href="https://tally.so/r/aQzvEZ?store=PureForm+Nutrition&coi=2371"
-         class="cta-btn"
-         style="border-radius:10px;padding:10px 16px;font-size:0.82rem;flex-shrink:0;white-space:nowrap;">
-        Stop the Bleed →
-      </a>
-
+  <!-- ─── FOOTER ────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <span class="mono" style="font-size:10px;color:#222;">CRO-T9 · Peak Performance Gear · 09 JUN 2026</span>
+      <span class="mono" style="font-size:10px;color:#222;">peakperformance.co.uk</span>
     </div>
-  </div>
+  </footer>
 
+</main>
 
-  <!-- ══════════════════════════════════════════════════════
-       JAVASCRIPT
-  ══════════════════════════════════════════════════════ -->
-  <script>
+<!-- ════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                          -->
+<!-- ════════════════════════════════════════════════════ -->
+<script>
+  /* ── 1. LIVE REVENUE LEAK TICKER ─────────────────────── */
+  // £85,000 / month = £85,000 / (30.44 days × 86,400s) ≈ £0.03232/s
+  const MONTHLY_LOSS = 85000;
+  const SECONDS_PER_MONTH = 30.4375 * 86400;
+  const LEAK_PER_SECOND = MONTHLY_LOSS / SECONDS_PER_MONTH;
 
-    /* ─── DATA CONSTANTS ──────────────────────────────── */
-    const MONTHLY_COI    = 2371;
-    const LOSS_PER_SEC   = MONTHLY_COI / 30 / 24 / 3600; // ~£0.000915/s
-    const SCAN_MIDNIGHT  = new Date('2026-06-02T00:00:00Z').getTime(); // UTC midnight
-    const SESSION_START  = Date.now();
+  let sessionStart = Date.now();
+  const tickerEl = document.getElementById('leak-ticker');
 
-    /* ─── DOM REFERENCES ──────────────────────────────── */
-    const mainCounterEl    = document.getElementById('mainCounter');
-    const footerCounterEl  = document.getElementById('footerCounter');
-    const sessionCounterEl = document.getElementById('sessionCounter');
+  function updateTicker() {
+    const elapsed = (Date.now() - sessionStart) / 1000;
+    const leaked = elapsed * LEAK_PER_SECOND;
+    tickerEl.textContent = leaked.toFixed(2);
+    requestAnimationFrame(updateTicker);
+  }
+  requestAnimationFrame(updateTicker);
 
-    /* ─── COUNTER UPDATE (every 100ms) ───────────────── */
-    function formatGBP(n) {
-      return '£' + n.toLocaleString('en-GB', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+  /* ── 2. FUNNEL BAR ENTRANCE ANIMATION ────────────────── */
+  const barTargets = {
+    'bar-1': '100%',
+    'bar-2': '32%',
+    'bar-3': '14%',
+    'bar-4': '1.2%'
+  };
+  const barMinWidths = {
+    'bar-1': '0px',
+    'bar-2': '0px',
+    'bar-3': '0px',
+    'bar-4': '44px'
+  };
+
+  // Delay slightly so page has rendered
+  setTimeout(() => {
+    let delay = 0;
+    for (const [id, target] of Object.entries(barTargets)) {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.width = target;
+          el.style.minWidth = barMinWidths[id];
+        }
+      }, delay);
+      delay += 200;
+    }
+  }, 300);
+
+  /* ── 3. SCROLL-REVEAL (IntersectionObserver) ─────────── */
+  const revealEls = document.querySelectorAll('.reveal-up');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+          observer.unobserve(e.target);
+        }
       });
-    }
+    }, { threshold: 0.08 });
 
-    function updateCounters() {
-      const now = Date.now();
+    revealEls.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(14px)';
+      el.style.transition = 'opacity 0.55s ease, transform 0.55s ease';
+      observer.observe(el);
+    });
+  }
 
-      // Elapsed seconds since midnight 02 Jun 2026 UTC
-      const elapsed   = Math.max(0, (now - SCAN_MIDNIGHT) / 1000);
-      const totalLoss = elapsed * LOSS_PER_SEC;
-      const fmtTotal  = formatGBP(totalLoss);
+  /* ── 4. CVR BADGE PULSE TEXT ─────────────────────────── */
+  // Adds a subtle flicker to the 1.2% badge every few seconds
+  const cvrBadge = document.getElementById('cvr-badge');
+  function flickerCVR() {
+    if (!cvrBadge) return;
+    cvrBadge.style.background = 'rgba(239,68,68,0.22)';
+    setTimeout(() => {
+      cvrBadge.style.background = 'rgba(239,68,68,0.08)';
+    }, 180);
+  }
+  setInterval(flickerCVR, 3200);
 
-      mainCounterEl.textContent   = fmtTotal;
-      footerCounterEl.textContent = fmtTotal;
+  /* ── 5. REDUCED MOTION RESPECT ───────────────────────── */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.blink, .pulse-red, .pulse-btn')
+      .forEach(el => el.style.animation = 'none');
+  }
+</script>
 
-      // Elapsed seconds since this page loaded
-      const sessionSec  = (now - SESSION_START) / 1000;
-      const sessionLoss = sessionSec * LOSS_PER_SEC;
-      sessionCounterEl.textContent = '£' + sessionLoss.toFixed(4);
-    }
-
-    setInterval(updateCounters, 100);
-    updateCounters(); // run immediately on load
-
-    /* ─── GAP BAR ANIMATION ───────────────────────────── */
-    function animateGapBars() {
-      const storeBar    = document.getElementById('storeBar');
-      const industryBar = document.getElementById('industryBar');
-      if (storeBar)    storeBar.style.width    = '34%';
-      if (industryBar) industryBar.style.width = '71%';
-    }
-
-    /* ─── GSAP STAGGER ANIMATION ─────────────────────── */
-    // All .fade-item elements slide up and fade in, staggered
-    gsap.fromTo(
-      '.fade-item',
-      { opacity: 0, y: 24 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.65,
-        stagger: 0.11,
-        ease: 'power2.out',
-        delay: 0.18
-      }
-    );
-
-    // Fire gap bar animation once the chart section is visible
-    // (section #5, at stagger index 4 → starts ≈ 0.18 + 4×0.11 = 0.62s,
-    //  fully visible by ≈1.27s, so 1200ms is safe)
-    setTimeout(animateGapBars, 1200);
-
-    /* ─── LUCIDE ICONS ────────────────────────────────── */
-    lucide.createIcons();
-
-  </script>
 </body>
 </html>
