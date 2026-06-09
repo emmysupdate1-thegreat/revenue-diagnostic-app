@@ -1,930 +1,900 @@
-"use client";
+'use client';
 
-/**
- * TemplateA.tsx — Forensic Revenue Dashboard
- * Core Trigger: Silent Bleed / Revenue Leak
- * Best for: Subscription failures, abandoned carts, checkout drops.
- *
- * ── PSYCHOLOGICAL CONSTITUTION ──────────────────────────────────────────────
- * §1 Loss Aversion   : Live counters tick from historical scan_date, not zero.
- * §2 Cognitive Ease  : Zero editable inputs. All data is read-only.
- * §3 Authority       : Every terminal block is followed by a Plain English block.
- * §4 Risk Reversal   : The Guarantee appears BEFORE the Protection Math.
- * §5 Frictionless    : ONE CTA — handleCTA. No mailto, no anchors.
- *
- * ── REQUIRED DATA SHAPE ─────────────────────────────────────────────────────
- * {
- *   store           : string    — "NexaCommerce.io"
- *   annual_coi      : number    — 148600  (Annual Cost of Inaction)
- *   technical_finding: string   — short hero sub-head
- *   scan_date       : string    — ISO 8601, must be in the past
- *   monthly_loss    : number    — 12383
- *   fix_investment  : number    — 7800
- *   terminal_lines  : Array<{ type:"ok"|"warn"|"crit"; text:string }>
- *   plain_english   : string    — CEO-readable translation
- * }
- *
- * ── PROP FORMATTERS ─────────────────────────────────────────────────────────
- * fmt(n)      → "$148,600"      (static rounded currency)
- * fmtLive(n)  → "$148,600.00"   (2dp live counter)
- * fmtMicro(n) → "$1.2348"       (4dp session loss)
- */
-
-import { useState, useEffect, useRef } from "react";
-import { motion, useInView } from "framer-motion";
 import {
-  Shield,
-  Terminal,
-  Activity,
-  CheckCircle,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { motion } from 'framer-motion';
+import {
+  AlertTriangle,
   ArrowRight,
-  Lock,
-  TrendingDown,
-} from "lucide-react";
+  Mail,
+  ShieldCheck,
+  Terminal,
+} from 'lucide-react';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SAMPLE DATA — for standalone preview only. Pass via props in production.
-// ═══════════════════════════════════════════════════════════════════════════
-const _SAMPLE: any = {
-  store: "NexaCommerce.io",
-  annual_coi: 148_600,
-  technical_finding:
-    "14.2% checkout abandonment rate detected across 3 critical drop-off nodes",
-  scan_date: new Date(Date.now() - 17 * 24 * 60 * 60 * 1000).toISOString(),
-  monthly_loss: 12_383,
-  fix_investment: 7_800,
-  terminal_lines: [
-    {
-      type: "ok",
-      text: 'target="NexaCommerce.io" protocol=HTTPS/2 nodes_crawled=1,204 tls_grade=A session_tracking=ACTIVE',
-    },
-    {
-      type: "warn",
-      text: "checkout_abandon_rate=14.2% [baseline=6.8%] ghost_carts=2,104/mo annual_exposure=$148,600",
-    },
-    {
-      type: "crit",
-      text: "payment_gw_timeout=3.1% | stripe_webhook_fail=19/day | drop_node=/checkout/payment [UNPATCHED]",
-    },
-  ],
-  plain_english:
-    "Your payment page is timing out on 3% of customers. Stripe is silently failing to confirm 19 orders every single day. Customers hit a dead end at the exact moment they're ready to pay — not because they changed their mind, but because your infrastructure failed them first.",
+/* ──────────────────────────────────────────────────────────────
+   PROP CONTRACT — field names are consumed by page.tsx router.
+   DO NOT rename or restructure.
+────────────────────────────────────────────────────────────── */
+interface TemplateAProps {
+  data: {
+    store: string;
+    domain: string;
+    currency: string;
+    scan_date: string;
+    scan_timestamp: string;
+    service_name: string;
+    service_id: string;
+    monthly_coi: number;
+    daily_coi: number;
+    annual_coi: number;
+    sessions_est: string;
+    aov_est: number;
+    fitd_price: number;
+    benchmark_store: number;
+    benchmark_industry: number;
+    benchmark_source: string;
+    technical_finding: string;
+    finding_detail_1: string;
+    finding_detail_2: string;
+    finding_detail_3: string;
+    plain_english: string;
+    real_urgency: string;
+    reply_email: string;
+  };
+  fmt: (n: number) => string;
+  onCTA: () => void;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ANIMATION VARIANTS
+────────────────────────────────────────────────────────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 22 },
+  visible: { opacity: 1, y: 0 },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// ═══════════════════════════════════════════════════════════════════════════
-const T = {
-  bg: "#0a0a0a",
-  card: "#111111",
-  border: "#2a2a2a",
-  red: "#ef4444",
-  green: "#22c55e",
-  amber: "#f59e0b",
-  mono: "'JetBrains Mono', monospace",
-  ui: "'Inter', sans-serif",
-} as const;
-
-const CARD: React.CSSProperties = {
-  background: T.card,
-  border: `1px solid ${T.border}`,
-  borderRadius: 12,
-  padding: 24,
+const staggerParent = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENT: Blinking Cursor
-// ═══════════════════════════════════════════════════════════════════════════
-function BlinkCursor() {
-  return (
-    <motion.span
-      animate={{ opacity: [1, 0, 1] }}
-      transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
-      style={{
-        display: "inline-block",
-        width: 8,
-        height: 16,
-        background: T.green,
-        marginLeft: 4,
-        verticalAlign: "middle",
-        borderRadius: 1,
-      }}
-    />
+const sectionReveal = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+/* ══════════════════════════════════════════════════════════════
+   COMPONENT
+══════════════════════════════════════════════════════════════ */
+export default function TemplateA({ data, fmt, onCTA }: TemplateAProps) {
+
+  /* ── RATE CONSTANTS ───────────────────────────────────────── */
+  // Dollar amount lost per millisecond
+  const ratePerMs = data.monthly_coi / (30 * 24 * 3_600_000);
+
+  // Scan epoch: midnight UTC on the scan_date string (YYYY-MM-DD)
+  const scanEpoch = useMemo(
+    () => new Date(`${data.scan_date}T00:00:00.000Z`).getTime(),
+    [data.scan_date],
   );
-}
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENT: Terminal Line (staggered reveal)
-// ═══════════════════════════════════════════════════════════════════════════
-function TermLine({
-  type,
-  text,
-  delay,
-}: {
-  type: "ok" | "warn" | "crit";
-  text: string;
-  delay: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
+  // Page mount timestamp (never changes)
+  const mountedAt = useRef<number>(Date.now());
 
-  const palette = {
-    ok:   { pfx: "[ OK ]", prefixColor: T.green, textColor: "#525252" },
-    warn: { pfx: "[WARN]", prefixColor: T.amber, textColor: T.amber   },
-    crit: { pfx: "[CRIT]", prefixColor: T.red,   textColor: T.red     },
-  };
-  const p = palette[type];
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, x: -12 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.35, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      style={{
-        fontFamily: T.mono,
-        fontSize: 12,
-        lineHeight: 1.95,
-        display: "flex",
-        gap: 14,
-        flexWrap: "wrap",
-      }}
-    >
-      <span style={{ color: p.prefixColor, fontWeight: 700, flexShrink: 0 }}>
-        {p.pfx}
-      </span>
-      <span style={{ color: p.textColor, wordBreak: "break-all" }}>{text}</span>
-    </motion.div>
+  /* ── STATE ────────────────────────────────────────────────── */
+  const [totalLost, setTotalLost] = useState<number>(
+    () => Math.max(0, (Date.now() - scanEpoch) * ratePerMs),
   );
-}
+  const [sessionLost, setSessionLost] = useState<number>(0);
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENT: Recovery Gauge
-// Pure SVG semi-circle + Framer Motion — ZERO chart libraries.
-// ═══════════════════════════════════════════════════════════════════════════
-function RecoveryGauge({ score = 91 }: { score?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-50px" });
-  const [display, setDisplay] = useState(0);
+  // Terminal reveal
+  const [visibleLines, setVisibleLines] = useState<string[]>([]);
+  const [terminalDone, setTerminalDone] = useState(false);
 
-  // Geometry
-  const R = 88, CX = 120, CY = 110;
-  const C = Math.PI * R; // semi-circumference
-  const tgtOffset = C * (1 - score / 100);
-  const arcD = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`;
-
-  // Animated score counter via rAF (avoids motion.text SVG quirks)
+  /* ── LIVE TICKER (100 ms → smooth decimal motion) ─────────── */
   useEffect(() => {
-    if (!inView) return;
-    let id: number;
-    const t0 = performance.now();
-    const dur = 1800;
-    const tick = (now: number) => {
-      const p = Math.min((now - t0) / dur, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(eased * score));
-      if (p < 1) id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [inView, score]);
-
-  const animatedArc = {
-    d: arcD,
-    fill: "none",
-    strokeLinecap: "round" as const,
-    strokeDasharray: C,
-    initial: { strokeDashoffset: C },
-    animate: { strokeDashoffset: inView ? tgtOffset : C },
-    transition: {
-      duration: 1.8,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-      delay: 0.2,
-    },
-  };
-
-  return (
-    <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <svg width="240" height="128" viewBox="0 0 240 128" overflow="visible">
-        {/* Track */}
-        <path d={arcD} fill="none" stroke="#1e1e1e" strokeWidth="16" strokeLinecap="round" />
-
-        {/* Glow bloom */}
-        <motion.path
-          {...animatedArc}
-          stroke={T.green}
-          strokeWidth="26"
-          opacity={0.12}
-          style={{ filter: "blur(10px)" }}
-        />
-
-        {/* Arc fill */}
-        <motion.path {...animatedArc} stroke={T.green} strokeWidth="16" />
-
-        {/* Tick marks */}
-        {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
-          const a = -Math.PI + p * Math.PI;
-          return (
-            <line
-              key={i}
-              x1={CX + (R + 7) * Math.cos(a)}
-              y1={CY + (R + 7) * Math.sin(a)}
-              x2={CX + (R + 16) * Math.cos(a)}
-              y2={CY + (R + 16) * Math.sin(a)}
-              stroke="#282828"
-              strokeWidth="1.5"
-            />
-          );
-        })}
-
-        {/* Animated score value */}
-        <text
-          x={CX} y={CY - 14}
-          textAnchor="middle"
-          fill={T.green}
-          fontSize="46"
-          fontWeight="700"
-          fontFamily={T.mono}
-        >
-          {display}
-        </text>
-
-        {/* /100 */}
-        <text x={CX} y={CY + 8} textAnchor="middle" fill="#555" fontSize="12" fontFamily={T.ui}>
-          / 100
-        </text>
-
-        {/* Scale ends */}
-        <text x={CX - R - 10} y={CY + 18} textAnchor="middle" fill="#383838" fontSize="10" fontFamily={T.mono}>0</text>
-        <text x={CX + R + 10} y={CY + 18} textAnchor="middle" fill="#383838" fontSize="10" fontFamily={T.mono}>100</text>
-      </svg>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
-export default function TemplateA({
-  data       = _SAMPLE,
-  fmt,
-  fmtLive,
-  fmtMicro,
-  handleCTA,
-}: any) {
-
-  // ── Default formatters ───────────────────────────────────────────────────
-  const $fmt   = fmt     ?? ((n: number) => "$" + Math.round(n).toLocaleString("en-US"));
-  const $live  = fmtLive ?? ((n: number) =>
-    "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-  const $micro = fmtMicro ?? ((n: number) =>
-    "$" + n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
-  const onCTA = handleCTA ?? (() => {});
-
-  // ── Live counter (Loss Aversion: calculated from historical scan_date) ───
-  const [totalLost,   setTotalLost]   = useState(0);
-  const [sessionLost, setSessionLost] = useState(0);
-  const sessionStart = useRef(Date.now());
-  const perSec = data.annual_coi / 365 / 24 / 3600;
-
-  useEffect(() => {
-    const scanTs = new Date(data.scan_date).getTime();
-    const tick = () => {
+    const id = setInterval(() => {
       const now = Date.now();
-      setTotalLost(  (perSec * (now - scanTs)) / 1000);
-      setSessionLost((perSec * (now - sessionStart.current)) / 1000);
-    };
-    tick();
-    const id = setInterval(tick, 50);
+      setTotalLost(Math.max(0, (now - scanEpoch) * ratePerMs));
+      setSessionLost((now - mountedAt.current) * ratePerMs);
+    }, 100);
     return () => clearInterval(id);
-  }, [perSec, data.scan_date]);
+  }, [scanEpoch, ratePerMs]);
 
-  // ── Derived math ─────────────────────────────────────────────────────────
-  const bkEven = (data.fix_investment / data.monthly_loss).toFixed(1);
-  const netRec = data.annual_coi - data.fix_investment;
-  const roiPct = Math.round((netRec / data.fix_investment) * 100);
+  /* ── TERMINAL ANIMATION ───────────────────────────────────── */
+  useEffect(() => {
+    // Build script once at mount — props are stable for the component's life
+    const script: string[] = [
+      `> INITIATING REVENUE SIGNAL SCAN: ${data.domain}`,
+      `> SCAN DATE: ${data.scan_timestamp}`,
+      `> SERVICE: ${data.service_name}`,
+      `>`,
+      `> [FINDING 01] ${data.finding_detail_1}`,
+      `> [FINDING 02] ${data.finding_detail_2}`,
+      `> [FINDING 03] ${data.finding_detail_3}`,
+      `>`,
+      `> SIGNAL INTEGRITY: COMPROMISED`,
+      `> COI RATE: ${fmt(data.daily_coi)}/day · ${fmt(data.monthly_coi)}/mo · ${fmt(data.annual_coi)}/yr`,
+      `> STATUS: ACTIVE REVENUE HEMORRHAGE CONFIRMED ▓`,
+    ];
 
-  // ── Animation presets ────────────────────────────────────────────────────
-  const fadeUp = {
-    hidden:  { opacity: 0, y: 26 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+    let idx = 0;
+    let tid: ReturnType<typeof setTimeout>;
+
+    const next = () => {
+      if (idx < script.length) {
+        const line = script[idx++];
+        setVisibleLines((prev) => [...prev, line]);
+        // Pacing: fast header lines, slower findings, fast status
+        const delay = idx <= 3 ? 160 : idx >= 9 ? 220 : 380;
+        tid = setTimeout(next, delay);
+      } else {
+        setTerminalDone(true);
+      }
+    };
+
+    tid = setTimeout(next, 800);
+    return () => clearTimeout(tid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── MICRO FORMATTER (sub-cent session loss) ──────────────── */
+  const fmtMicro = useCallback(
+    (n: number): string => {
+      if (n < 0.001) return n.toFixed(6);
+      if (n < 0.01)  return n.toFixed(4);
+      return fmt(n);
+    },
+    [fmt],
+  );
+
+  /* ── GAP CHART DIMENSIONS ─────────────────────────────────── */
+  const CHART_H = 164; // px — total bar-area height
+  const maxScore  = Math.max(data.benchmark_store, data.benchmark_industry, 1);
+  const storeBarH = (data.benchmark_store  / maxScore) * CHART_H;
+  const industBarH = (data.benchmark_industry / maxScore) * CHART_H;
+
+  /* ── SMOOTH-SCROLL TO COUNTER ─────────────────────────────── */
+  const counterRef = useRef<HTMLDivElement>(null);
+  const scrollToCounter = () =>
+    counterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  /* ── LINE COLOUR CLASSIFIER (terminal) ───────────────────── */
+  const termLineClass = (line: string): string => {
+    if (line.includes('[FINDING'))          return 'text-[#f59e0b]';
+    if (line.includes('COMPROMISED') ||
+        line.includes('HEMORRHAGE'))        return 'text-[#ef4444] font-semibold';
+    if (line.includes('INITIATING') ||
+        line.includes('SCAN DATE') ||
+        line.includes('SERVICE:'))          return 'text-[#22c55e]';
+    if (line === '>')                       return 'text-[#252830]';
+    return 'text-[#5a6070]';
   };
-  const stg = { visible: { transition: { staggerChildren: 0.1 } } };
 
-  // Reusable scroll-reveal props for sections
-  const sr = {
-    initial:    { opacity: 0, y: 30 },
-    whileInView:{ opacity: 1, y: 0  },
-    viewport:   { once: true, margin: "-40px" },
-    transition: { duration: 0.5 },
-  };
-
-  // ── Render ───────────────────────────────────────────────────────────────
+  /* ════════════════════════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════════════════════════ */
   return (
-    <div
-      style={{
-        background:  T.bg,
-        minHeight:   "100vh",
-        color:       "#e5e5e5",
-        fontFamily:  T.ui,
-        maxWidth:    860,
-        margin:      "0 auto",
-        padding:     "48px 24px 96px",
-      }}
-    >
-      {/* ── Google Fonts injection ── */}
+    <>
+      {/* ── GLOBAL STYLES + FONT IMPORT ─────────────────────── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        * { box-sizing: border-box; margin: 0; }
-        ::selection { background: #ef444420; color: #ef4444; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+        /* Utility aliases */
+        .f-sans { font-family: 'Inter', sans-serif; }
+        .f-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Pulsing green glow on primary CTA */
+        @keyframes glowPulse {
+          0%, 100% {
+            box-shadow:
+              0 0 18px rgba(34,197,94,.22),
+              0 0 40px rgba(34,197,94,.08);
+          }
+          50% {
+            box-shadow:
+              0 0 32px rgba(34,197,94,.44),
+              0 0 72px rgba(34,197,94,.18);
+          }
+        }
+        .btn-pulse { animation: glowPulse 2.6s ease-in-out infinite; }
+
+        /* Sweeping scanline across terminal */
+        @keyframes scanline {
+          0%   { top: -6px; opacity: 1; }
+          90%  { opacity: 1; }
+          100% { top: 102%; opacity: 0; }
+        }
+        .terminal-body { position: relative; overflow: hidden; }
+        .terminal-body::after {
+          content: '';
+          position: absolute;
+          left: 0; right: 0;
+          height: 3px;
+          background: linear-gradient(
+            transparent,
+            rgba(34,197,94,.05),
+            transparent
+          );
+          animation: scanline 5s linear infinite;
+          pointer-events: none;
+        }
+
+        /* Prevent any horizontal bleed at 320 px */
+        * { box-sizing: border-box; }
+        html, body { overflow-x: hidden; }
       `}</style>
 
-      {/* ════════════════════════════════════════════════════════════════
-          §1  HERO
-          "We found {annual_coi} leaving {store} every year."
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section
-        initial="hidden"
-        animate="visible"
-        variants={stg}
-        style={{ marginBottom: 52, textAlign: "center" }}
+      {/* ── ROOT ────────────────────────────────────────────── */}
+      <div
+        className="f-sans min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden"
+        style={{ paddingBottom: '72px' }}
       >
-        {/* Live recon badge */}
-        <motion.div variants={fadeUp} style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <span
-            style={{
-              display:     "inline-flex",
-              alignItems:  "center",
-              gap:         8,
-              background:  "#0c180c",
-              border:      `1px solid ${T.green}28`,
-              borderRadius: 9999,
-              padding:     "6px 16px",
-            }}
-          >
-            <motion.span
-              animate={{ scale: [1, 1.45, 1], opacity: [1, 0.4, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
-              style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: T.green }}
-            />
-            <span style={{ fontFamily: T.mono, fontSize: 11, color: T.green, letterSpacing: "0.1em" }}>
-              FORENSIC_SCAN_COMPLETE
-            </span>
-          </span>
-        </motion.div>
 
-        {/* H1 */}
-        <motion.h1
-          variants={fadeUp}
-          style={{
-            fontSize:      "clamp(26px, 4.5vw, 46px)",
-            fontWeight:    900,
-            lineHeight:    1.12,
-            letterSpacing: "-0.025em",
-            color:         "#ffffff",
-            marginBottom:  18,
-          }}
-        >
-          We found{" "}
-          <span style={{ position: "relative", display: "inline-block" }}>
-            {/* Pulsing red halo behind loss amount */}
-            <motion.span
-              animate={{ opacity: [0.15, 0.5, 0.15] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              style={{
-                position:    "absolute",
-                inset:       "-6px -10px",
-                background:  "#ef44440d",
-                borderRadius: 8,
-                pointerEvents: "none",
-              }}
-            />
-            <span style={{ color: T.red }}>{$fmt(data.annual_coi)}</span>
-          </span>{" "}
-          leaving <span style={{ color: "#f5f5f5" }}>{data.store}</span> every year.
-        </motion.h1>
-
-        {/* Technical subhead */}
-        <motion.p
-          variants={fadeUp}
-          style={{ color: "#737373", fontSize: 16, lineHeight: 1.65, maxWidth: 520, margin: "0 auto 36px" }}
-        >
-          {data.technical_finding}
-        </motion.p>
-
-        {/* Section rule */}
-        <motion.div
-          variants={fadeUp}
-          style={{ height: 1, background: "linear-gradient(90deg,transparent,#2a2a2a 25%,#2a2a2a 75%,transparent)" }}
-        />
-      </motion.section>
-
-      {/* ════════════════════════════════════════════════════════════════
-          §2  LIVE COUNTER
-          Red, ticking upwards from historical scan_date (Loss Aversion).
-          Includes a Session Loss micro-counter.
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ marginBottom: 52 }}>
+        {/* Ambient depth glows — fixed, pointer-events none */}
         <div
-          style={{
-            ...CARD,
-            background: "#0e0808",
-            border:     `1px solid ${T.red}28`,
-            position:   "relative",
-            overflow:   "hidden",
-          }}
+          aria-hidden
+          className="pointer-events-none fixed inset-0 overflow-hidden"
         >
-          {/* Ambient radial bleed */}
           <div
+            className="absolute rounded-full"
             style={{
-              position:  "absolute",
-              top:       -100,
-              left:      "50%",
-              transform: "translateX(-50%)",
-              width:     700,
-              height:    280,
-              background: "radial-gradient(ellipse,#ef44440d 0%,transparent 70%)",
-              pointerEvents: "none",
+              top: '-80px', left: '20%',
+              width: '700px', height: '500px',
+              background: 'radial-gradient(ellipse, rgba(239,68,68,.055) 0%, transparent 70%)',
+              filter: 'blur(0px)',
             }}
           />
+          <div
+            className="absolute rounded-full"
+            style={{
+              bottom: '15%', right: '-60px',
+              width: '420px', height: '420px',
+              background: 'radial-gradient(ellipse, rgba(239,68,68,.03) 0%, transparent 70%)',
+              filter: 'blur(0px)',
+            }}
+          />
+        </div>
 
-          <div style={{ position: "relative" }}>
-            {/* Live label */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 22 }}>
-              <motion.span
-                animate={{ opacity: [1, 0.1, 1] }}
-                transition={{ duration: 0.58, repeat: Infinity }}
-                style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: T.red }}
+        {/* ── CONTENT COLUMN ────────────────────────────────── */}
+        <div className="relative max-w-2xl mx-auto px-4 sm:px-6">
+
+          {/* ════════════════════════════════════════════════
+              1. HEADER
+          ════════════════════════════════════════════════ */}
+          <header className="flex items-center justify-between py-4 border-b border-[#1a1a1a]">
+            <span
+              className="f-mono text-[10px] text-[#3b3f48] tracking-widest uppercase truncate mr-3"
+              style={{ letterSpacing: '0.12em' }}
+            >
+              DIAGNOSTIC REPORT · {data.domain} · {data.scan_timestamp}
+            </span>
+            <span
+              className="f-mono text-[10px] text-[#3b3f48] tracking-widest whitespace-nowrap flex-shrink-0"
+              style={{ letterSpacing: '0.12em' }}
+            >
+              REF: GHO-2026-{data.service_id}
+            </span>
+          </header>
+
+          {/* ════════════════════════════════════════════════
+              2. HERO
+          ════════════════════════════════════════════════ */}
+          <motion.section
+            className="pt-12 pb-10"
+            initial="hidden"
+            animate="visible"
+            variants={staggerParent}
+          >
+            {/* Eye-brow */}
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.48 }}
+              className="f-mono text-[11px] tracking-[0.18em] uppercase text-[#f59e0b] mb-4"
+            >
+              Revenue Signal Intelligence — {data.store}
+            </motion.p>
+
+            {/* Headline */}
+            <motion.h1
+              variants={fadeUp}
+              transition={{ duration: 0.54 }}
+              className="font-bold leading-[1.14] text-white mb-5"
+              style={{ fontSize: 'clamp(1.75rem, 5.5vw, 2.6rem)' }}
+            >
+              We found{' '}
+              <span className="f-mono text-[#ef4444]">{fmt(data.annual_coi)}</span>
+              {' '}leaving {data.store} every year.
+            </motion.h1>
+
+            {/* Sub-headline */}
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.54 }}
+              className="text-[#8a8f9c] leading-relaxed border-l-2 border-[#ef4444]/20 pl-4 mb-8"
+              style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}
+            >
+              {data.technical_finding}
+            </motion.p>
+
+            {/* Hero CTA — smooth-scrolls to counter */}
+            <motion.button
+              variants={fadeUp}
+              transition={{ duration: 0.48 }}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              onClick={scrollToCounter}
+              className="inline-flex items-center gap-2.5 border border-[#ef4444]/32 text-[#ef4444] px-6 py-3 rounded-lg font-medium text-sm transition-colors duration-200 group"
+              style={{ background: 'transparent' }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = 'rgba(239,68,68,0.07)')
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = 'transparent')
+              }
+            >
+              See the full diagnostic
+              <ArrowRight
+                size={14}
+                className="group-hover:translate-x-0.5 transition-transform duration-200"
               />
-              <span style={{ fontFamily: T.mono, fontSize: 11, color: T.red, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                Revenue leaving {data.store} since scan
-              </span>
-            </div>
+            </motion.button>
+          </motion.section>
 
-            {/* Primary loss counter */}
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
+          {/* ════════════════════════════════════════════════
+              3. LIVE REVENUE LOSS COUNTER
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            ref={counterRef}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="mb-5"
+          >
+            <div
+              className="bg-[#111111] border border-[#242424] rounded-xl p-6 relative overflow-hidden"
+            >
+              {/* Inner radial glow */}
               <div
+                aria-hidden
+                className="absolute inset-0 rounded-xl pointer-events-none"
                 style={{
-                  fontFamily:    T.mono,
-                  fontSize:      "clamp(38px, 8vw, 70px)",
-                  fontWeight:    700,
-                  color:         T.red,
-                  letterSpacing: "-0.02em",
-                  lineHeight:    1,
-                  textShadow:    `0 0 50px ${T.red}38`,
+                  background:
+                    'radial-gradient(ellipse at 25% 15%, rgba(239,68,68,.07) 0%, transparent 55%)',
                 }}
-              >
-                {$live(totalLost)}
-              </div>
-              <div style={{ fontFamily: T.mono, fontSize: 11, color: "#383838", letterSpacing: "0.12em", marginTop: 10 }}>
-                ACCUMULATED · REAL-TIME · COMPOUNDING
+              />
+
+              <div className="relative">
+                {/* LIVE badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="relative flex h-2 w-2 flex-shrink-0">
+                    <span className="animate-ping absolute inset-0 rounded-full bg-[#ef4444] opacity-70" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ef4444]" />
+                  </span>
+                  <p
+                    className="f-mono text-[10px] text-[#ef4444] uppercase"
+                    style={{ letterSpacing: '0.16em' }}
+                  >
+                    LIVE — Revenue Leak Since Scan Date
+                  </p>
+                </div>
+
+                {/* Primary counter */}
+                <p
+                  className="f-mono font-bold text-[#ef4444] tabular-nums leading-none mb-2"
+                  style={{ fontSize: 'clamp(2.4rem, 9vw, 4.1rem)' }}
+                >
+                  {fmt(totalLost)}
+                </p>
+
+                {/* Rate annotation */}
+                <p className="f-mono text-[11px] text-[#3b3f48] mb-5">
+                  Running at{' '}
+                  <span className="text-[#ef4444]">{fmt(data.daily_coi)}</span>
+                  {' '}per day ·{' '}
+                  <span className="text-[#ef4444]">{fmt(data.monthly_coi)}</span>
+                  {' '}per month
+                </p>
+
+                {/* Session loss micro-counter */}
+                <div className="bg-[#161616] border border-[#1f1f1f] rounded-lg px-4 py-3 mb-5">
+                  <p className="f-mono text-[11px] text-[#4a5060]">
+                    Session Loss:{' '}
+                    <span className="text-[#f59e0b] font-semibold">
+                      {fmtMicro(sessionLost)}
+                    </span>
+                    {' '}evaporated while viewing this page
+                  </p>
+                </div>
+
+                {/* Locked metadata badges — NO editable inputs */}
+                <div className="flex flex-wrap gap-2.5">
+                  {(
+                    [
+                      { label: 'Sessions Est.', val: data.sessions_est },
+                      { label: 'AOV Est.',       val: fmt(data.aov_est) },
+                      { label: 'Service ID',     val: data.service_id   },
+                    ] as const
+                  ).map(({ label, val }) => (
+                    <div
+                      key={label}
+                      className="bg-[#161616] border border-[#1f1f1f] rounded-md px-3 py-2"
+                    >
+                      <p
+                        className="f-mono text-[9px] text-[#3b3f48] uppercase mb-1"
+                        style={{ letterSpacing: '0.12em' }}
+                      >
+                        {label}
+                      </p>
+                      <p className="f-mono text-sm text-[#e0e2e8] font-semibold">
+                        {val}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          </motion.div>
 
-            {/* Divider */}
-            <div style={{ height: 1, background: "#1e1e1e", marginBottom: 22 }} />
+          {/* ════════════════════════════════════════════════
+              4. TECHNICAL EVIDENCE TERMINAL
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="mb-5"
+          >
+            <div className="bg-[#111111] border border-[#242424] rounded-xl overflow-hidden">
 
-            {/* Session micro-counter */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              {/* macOS-style title bar */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#151515] border-b border-[#1e1e1e]">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#27c840]" />
+                </div>
+                <div className="flex items-center gap-1.5 ml-2.5">
+                  <Terminal size={11} className="text-[#3b3f48]" />
+                  <span className="f-mono text-[10px] text-[#3b3f48]">
+                    revenue-signal-scan.sh
+                  </span>
+                </div>
+              </div>
+
+              {/* Terminal body with scanline */}
+              <div className="terminal-body p-5 min-h-[220px]">
+                {visibleLines.map((line, i) => (
+                  <motion.p
+                    key={i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.1 }}
+                    className={`f-mono leading-[1.85] ${termLineClass(line)}`}
+                    style={{ fontSize: 'clamp(10px, 2.5vw, 12px)' }}
+                  >
+                    {line || '\u00A0'}
+                  </motion.p>
+                ))}
+                {!terminalDone && (
+                  <span className="f-mono text-xs text-[#22c55e] animate-pulse">
+                    █
+                  </span>
+                )}
+              </div>
+
+              {/* Plain-English translation */}
+              <div className="border-t border-[#1a1a1a] p-5 bg-[#0d0d0d]">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle
+                    size={14}
+                    className="text-[#f59e0b] flex-shrink-0 mt-0.5"
+                  />
+                  <div>
+                    <p
+                      className="f-mono text-[9px] text-[#f59e0b] uppercase mb-2"
+                      style={{ letterSpacing: '0.14em' }}
+                    >
+                      Plain English Translation
+                    </p>
+                    <p className="text-sm text-[#b5b9c4] leading-relaxed">
+                      {data.plain_english}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ════════════════════════════════════════════════
+              5. GAP ANALYSIS CHART
+              Pure Tailwind + framer-motion height animation.
+              Zero external chart libraries.
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="mb-5"
+          >
+            <div className="bg-[#111111] border border-[#242424] rounded-xl p-6">
+              <p
+                className="f-mono text-[9px] text-[#3b3f48] uppercase mb-1"
+                style={{ letterSpacing: '0.14em' }}
+              >
+                Signal Integrity Analysis · Diagnostic Score
+              </p>
+              <h3 className="text-base font-semibold text-white mb-7">
+                {data.store} vs. Industry Benchmark
+              </h3>
+
+              {/* Bar chart */}
               <div
-                style={{
-                  display:    "flex",
-                  alignItems: "center",
-                  gap:        10,
-                  background: "#160a0a",
-                  border:     `1px solid ${T.red}18`,
-                  borderRadius: 10,
-                  padding:    "10px 22px",
-                }}
+                className="relative flex items-end justify-center gap-10 sm:gap-20"
+                style={{ height: `${CHART_H + 16}px` }}
               >
-                <Activity size={14} color={T.red} />
-                <span style={{ color: "#525252", fontSize: 13 }}>Session Loss</span>
-                <span style={{ fontFamily: T.mono, fontSize: 20, color: T.red, fontWeight: 600, marginLeft: 10 }}>
-                  {$micro(sessionLost)}
-                </span>
+                {/* Horizontal grid lines */}
+                {[0.25, 0.5, 0.75, 1].map((frac) => (
+                  <div
+                    key={frac}
+                    aria-hidden
+                    className="absolute left-0 right-0 border-t border-[#181818]"
+                    style={{ bottom: `${frac * CHART_H + 8}px` }}
+                  />
+                ))}
+
+                {/* ── Store bar (Red) */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="f-mono text-sm font-bold text-[#ef4444]">
+                    {data.benchmark_store}
+                  </span>
+                  <div
+                    className="relative flex-shrink-0"
+                    style={{ width: 'clamp(64px, 18vw, 108px)', height: `${CHART_H}px` }}
+                  >
+                    <motion.div
+                      className="absolute bottom-0 inset-x-0 rounded-t"
+                      style={{
+                        background:
+                          'linear-gradient(to top, #ef4444, rgba(239,68,68,.55) 60%, rgba(239,68,68,.12))',
+                        transformOrigin: 'bottom',
+                      }}
+                      initial={{ height: 0 }}
+                      whileInView={{ height: storeBarH }}
+                      viewport={{ once: true }}
+                      transition={{
+                        duration: 0.95,
+                        ease: [0.16, 1, 0.3, 1],
+                        delay: 0.15,
+                      }}
+                    />
+                  </div>
+                  <p
+                    className="f-mono text-[9px] text-[#ef4444] uppercase text-center leading-tight max-w-[110px] px-1"
+                    style={{ letterSpacing: '0.1em' }}
+                  >
+                    {data.store}
+                  </p>
+                </div>
+
+                {/* ── Industry bar (Green) */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="f-mono text-sm font-bold text-[#22c55e]">
+                    {data.benchmark_industry}
+                  </span>
+                  <div
+                    className="relative flex-shrink-0"
+                    style={{ width: 'clamp(64px, 18vw, 108px)', height: `${CHART_H}px` }}
+                  >
+                    <motion.div
+                      className="absolute bottom-0 inset-x-0 rounded-t"
+                      style={{
+                        background:
+                          'linear-gradient(to top, #22c55e, rgba(34,197,94,.55) 60%, rgba(34,197,94,.12))',
+                        transformOrigin: 'bottom',
+                      }}
+                      initial={{ height: 0 }}
+                      whileInView={{ height: industBarH }}
+                      viewport={{ once: true }}
+                      transition={{
+                        duration: 0.95,
+                        ease: [0.16, 1, 0.3, 1],
+                        delay: 0.35,
+                      }}
+                    />
+                  </div>
+                  <p
+                    className="f-mono text-[9px] text-[#22c55e] uppercase text-center leading-tight max-w-[110px] px-1"
+                    style={{ letterSpacing: '0.1em' }}
+                  >
+                    Industry Benchmark
+                  </p>
+                </div>
               </div>
-              <span style={{ fontFamily: T.mono, fontSize: 10, color: "#2e2e2e", letterSpacing: "0.1em" }}>
-                MONEY LOST WHILE VIEWING THIS PAGE
-              </span>
-            </div>
-          </div>
-        </div>
-      </motion.section>
 
-      {/* ════════════════════════════════════════════════════════════════
-          §3  FORENSIC PROOF
-          Black terminal (Authority: raw external reconnaissance).
-          ALWAYS followed by Plain English translation for non-technical CEOs.
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ marginBottom: 52 }}>
-        {/* Section header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <Terminal size={14} color="#525252" />
-          <span style={{ color: "#525252", fontSize: 12, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase" }}>
-            External Forensic Recon
-          </span>
-          <div style={{ flex: 1, height: 1, background: "#1a1a1a" }} />
-          <span
-            style={{
-              display:    "inline-flex",
-              alignItems: "center",
-              gap:        6,
-              background: "#0a160a",
-              border:     `1px solid ${T.green}1a`,
-              borderRadius: 999,
-              padding:    "3px 11px",
-            }}
-          >
-            <Lock size={9} color={T.green} />
-            <span style={{ fontFamily: T.mono, fontSize: 10, color: T.green, letterSpacing: "0.06em" }}>ENCRYPTED</span>
-          </span>
-        </div>
-
-        {/* Terminal block */}
-        <div
-          style={{
-            background:   "#050505",
-            border:       "1px solid #1a1a1a",
-            borderRadius: 12,
-            overflow:     "hidden",
-            marginBottom: 14,
-          }}
-        >
-          {/* macOS-style chrome */}
-          <div
-            style={{
-              background:   "#0f0f0f",
-              borderBottom: "1px solid #1a1a1a",
-              padding:      "10px 18px",
-              display:      "flex",
-              alignItems:   "center",
-              gap:          8,
-            }}
-          >
-            {[T.red, T.amber, T.green].map((c) => (
-              <div key={c} style={{ width: 11, height: 11, borderRadius: "50%", background: c, opacity: 0.72 }} />
-            ))}
-            <span style={{ marginLeft: 10, fontFamily: T.mono, fontSize: 11, color: "#383838" }}>
-              forensic-recon v3.1.0 — {data.store}
-            </span>
-          </div>
-
-          {/* Body */}
-          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ fontFamily: T.mono, fontSize: 12, color: "#2e2e2e", marginBottom: 10 }}>
-              $ forensic-recon --target {data.store} --depth=full --output=structured
-            </div>
-            {data.terminal_lines.map((ln: any, i: number) => (
-              <TermLine key={i} type={ln.type} text={ln.text} delay={0.15 + i * 0.18} />
-            ))}
-            <div style={{ marginTop: 8, display: "flex", alignItems: "center" }}>
-              <span style={{ fontFamily: T.mono, fontSize: 12, color: "#262626" }}>$</span>
-              <BlinkCursor />
-            </div>
-          </div>
-        </div>
-
-        {/* ── PLAIN ENGLISH TRANSLATION (Authority §3 — mandatory after every terminal) ── */}
-        <div
-          style={{
-            background:   "#0b110b",
-            border:       `1px solid ${T.green}1a`,
-            borderLeft:   `3px solid ${T.green}`,
-            borderRadius: "0 10px 10px 0",
-            padding:      "16px 20px",
-            display:      "flex",
-            gap:          14,
-            alignItems:   "flex-start",
-          }}
-        >
-          <div
-            style={{
-              background:    `${T.green}18`,
-              borderRadius:  6,
-              padding:       "5px 8px",
-              fontFamily:    T.mono,
-              fontSize:      9,
-              color:         T.green,
-              letterSpacing: "0.08em",
-              flexShrink:    0,
-              lineHeight:    1.5,
-              textTransform: "uppercase",
-              marginTop:     1,
-            }}
-          >
-            Plain<br />English
-          </div>
-          <p style={{ color: "#d4d4d4", fontSize: 14, lineHeight: 1.8, margin: 0 }}>
-            {data.plain_english}
-          </p>
-        </div>
-      </motion.section>
-
-      {/* ════════════════════════════════════════════════════════════════
-          §4  RECOVERY GAUGE
-          Pure SVG + Framer Motion semi-circle. Score: 91/100. Zero chart libs.
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ marginBottom: 52 }}>
-        <div style={CARD}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
-            <Activity size={14} color={T.green} />
-            <span style={{ color: "#737373", fontSize: 12, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase" }}>
-              Recovery Potential
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-            <RecoveryGauge score={91} />
-
-            <div style={{ textAlign: "center" }}>
-              <div style={{ color: T.green, fontWeight: 700, fontSize: 18, letterSpacing: "-0.01em", marginBottom: 8 }}>
-                HIGH CONFIDENCE RECOVERY
-              </div>
-              <p style={{ color: "#525252", fontSize: 13, lineHeight: 1.65, maxWidth: 420, margin: "0 auto" }}>
-                91% of identified leaks fall within standard recovery protocols.
-                All 3 failure nodes are patchable without platform migration or vendor changes.
+              <p
+                className="f-mono text-[9px] text-[#252830] text-right mt-3"
+                style={{ letterSpacing: '0.08em' }}
+              >
+                Source: {data.benchmark_source}
               </p>
             </div>
+          </motion.div>
 
-            {/* Recovery breakdown pills */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
-              {[
-                { label: "Payment Gateway Fix", pct: "97%", c: T.green },
-                { label: "Cart Abandonment",    pct: "88%", c: T.green },
-                { label: "Session Drops",       pct: "83%", c: T.amber },
-              ].map((x) => (
-                <div
-                  key={x.label}
-                  style={{
-                    display:    "flex",
-                    alignItems: "center",
-                    gap:        8,
-                    background: "#161616",
-                    border:     `1px solid ${T.border}`,
-                    borderRadius: 9999,
-                    padding:    "6px 16px",
-                  }}
-                >
-                  <span style={{ color: "#737373", fontSize: 12 }}>{x.label}</span>
-                  <span style={{ color: x.c, fontFamily: T.mono, fontSize: 12, fontWeight: 700 }}>{x.pct}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ════════════════════════════════════════════════════════════════
-          §5  THE GUARANTEE
-          Risk Reversal (Hormozi): MUST appear BEFORE Protection Math.
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ marginBottom: 52 }}>
-        <div
-          style={{
-            ...CARD,
-            background: "#0b100b",
-            border:     `1px solid ${T.green}28`,
-            position:   "relative",
-            overflow:   "hidden",
-          }}
-        >
-          {/* Ambient green bloom */}
-          <div
-            style={{
-              position:  "absolute",
-              top:       -80,
-              left:      "50%",
-              transform: "translateX(-50%)",
-              width:     600,
-              height:    260,
-              background: `radial-gradient(ellipse,${T.green}08 0%,transparent 70%)`,
-              pointerEvents: "none",
-            }}
-          />
-
-          <div style={{ position: "relative" }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 18, marginBottom: 22 }}>
-              <div
-                style={{
-                  width:       56,
-                  height:      56,
-                  background:  `${T.green}14`,
-                  border:      `1.5px solid ${T.green}38`,
-                  borderRadius: 14,
-                  display:     "flex",
-                  alignItems:  "center",
-                  justifyContent: "center",
-                  flexShrink:  0,
-                }}
-              >
-                <Shield size={26} color={T.green} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily:    T.mono,
-                    fontSize:      10,
-                    color:         T.green,
-                    letterSpacing: "0.12em",
-                    marginBottom:  4,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Alex's Personal Guarantee
-                </div>
-                <div style={{ color: "#f5f5f5", fontSize: 22, fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.015em" }}>
-                  Zero Risk. You Win First.
-                </div>
-              </div>
-            </div>
-
-            {/* Body */}
-            <p style={{ color: "#c4c4c4", fontSize: 16, lineHeight: 1.8, marginBottom: 22 }}>
-              If I don't surface at least{" "}
-              <strong style={{ color: T.green }}>3× your investment</strong>{" "}
-              in recoverable revenue within 30 days of our engagement,
-              you pay <strong style={{ color: "#ffffff" }}>absolutely nothing.</strong>
-            </p>
-
-            {/* Bullets */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                "No contracts. No lock-in. Full refund within 30 days — no questions asked.",
-                "You see the recoverable revenue before you're billed for the discovery phase.",
-                "Every finding is independently verifiable by your own analytics stack.",
-              ].map((text, i) => (
-                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <CheckCircle size={15} color={T.green} style={{ flexShrink: 0, marginTop: 3 }} />
-                  <span style={{ color: "#8a8a8a", fontSize: 14, lineHeight: 1.65 }}>{text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ════════════════════════════════════════════════════════════════
-          §6  PROTECTION MATH
-          Monthly Loss vs. One-Time Fix Investment.
-          Placed AFTER the guarantee (Risk Reversal rule).
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ marginBottom: 52 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <TrendingDown size={14} color="#525252" />
-          <span style={{ color: "#525252", fontSize: 12, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase" }}>
-            The Math
-          </span>
-          <div style={{ flex: 1, height: 1, background: "#1a1a1a" }} />
-        </div>
-
-        {/* 2-column comparison */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-
-          {/* Monthly Loss */}
-          <div style={{ ...CARD, background: "#0e0808", border: `1px solid ${T.red}28` }}>
-            <div style={{ fontFamily: T.mono, fontSize: 10, color: T.red, letterSpacing: "0.1em", marginBottom: 14, textTransform: "uppercase" }}>
-              ↓ Monthly Loss
-            </div>
-            <div
-              style={{
-                fontFamily:  T.mono,
-                fontSize:    "clamp(22px, 4vw, 34px)",
-                fontWeight:  700,
-                color:       T.red,
-                textShadow:  `0 0 28px ${T.red}28`,
-                lineHeight:  1,
-                marginBottom: 8,
-              }}
-            >
-              {$fmt(data.monthly_loss)}
-            </div>
-            <div style={{ color: "#444", fontSize: 12, marginBottom: 16 }}>Every month. Compounding.</div>
-            {/* Full-width red bar */}
-            <div style={{ height: 4, background: "#1e1e1e", borderRadius: 99, overflow: "hidden" }}>
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: "100%" }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
-                style={{ height: "100%", background: `linear-gradient(90deg,${T.red},#dc2626)`, borderRadius: 99 }}
-              />
-            </div>
-            <div style={{ fontFamily: T.mono, fontSize: 11, color: "#333", marginTop: 6 }}>
-              = {$fmt(data.annual_coi)} / year
-            </div>
-          </div>
-
-          {/* One-Time Fix */}
-          <div style={{ ...CARD, background: "#0b100b", border: `1px solid ${T.green}28` }}>
-            <div style={{ fontFamily: T.mono, fontSize: 10, color: T.green, letterSpacing: "0.1em", marginBottom: 14, textTransform: "uppercase" }}>
-              ✓ One-Time Fix
-            </div>
-            <div
-              style={{
-                fontFamily:  T.mono,
-                fontSize:    "clamp(22px, 4vw, 34px)",
-                fontWeight:  700,
-                color:       T.green,
-                textShadow:  `0 0 28px ${T.green}28`,
-                lineHeight:  1,
-                marginBottom: 8,
-              }}
-            >
-              {$fmt(data.fix_investment)}
-            </div>
-            <div style={{ color: "#444", fontSize: 12, marginBottom: 16 }}>Paid once. Recovered forever.</div>
-            {/* Proportional green bar */}
-            <div style={{ height: 4, background: "#1e1e1e", borderRadius: 99, overflow: "hidden" }}>
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: `${Math.min((data.fix_investment / data.annual_coi) * 100, 100)}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.1, ease: "easeOut", delay: 0.35 }}
-                style={{ height: "100%", background: `linear-gradient(90deg,${T.green},#16a34a)`, borderRadius: 99 }}
-              />
-            </div>
-            <div style={{ fontFamily: T.mono, fontSize: 11, color: "#333", marginTop: 6 }}>
-              break-even: {bkEven} months
-            </div>
-          </div>
-        </div>
-
-        {/* ROI summary strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.45, delay: 0.3 }}
-          style={{ ...CARD, padding: "16px 24px", display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 12 }}
-        >
-          {[
-            { label: "Year-1 ROI",   value: `${roiPct}%`,    c: T.green },
-            { label: "Break-even",   value: `${bkEven} mo`,  c: T.amber },
-            { label: "Net Recovery", value: $fmt(netRec),     c: T.green },
-          ].map((x) => (
-            <div key={x.label} style={{ textAlign: "center", padding: "4px 12px" }}>
-              <div style={{ fontFamily: T.mono, fontSize: "clamp(20px,3vw,26px)", fontWeight: 700, color: x.c, lineHeight: 1 }}>
-                {x.value}
-              </div>
-              <div style={{ color: "#444", fontSize: 10, marginTop: 5, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                {x.label}
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </motion.section>
-
-      {/* ════════════════════════════════════════════════════════════════
-          §7  CTA — SINGLE BUTTON (Frictionless Action)
-          No mailto. No secondary links. One action: handleCTA.
-      ════════════════════════════════════════════════════════════════ */}
-      <motion.section {...sr} style={{ textAlign: "center" }}>
-
-        {/* Urgency echo of live counter */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 22 }}>
-          <motion.span
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 0.85, repeat: Infinity }}
-            style={{ fontFamily: T.mono, fontSize: 13, color: T.red, fontWeight: 700 }}
+          {/* ════════════════════════════════════════════════
+              6. ALEX'S PERSONAL GUARANTEE
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="mb-5"
           >
-            {$live(totalLost)}
-          </motion.span>
-          <span style={{ color: "#444", fontSize: 13 }}>lost since this scan started</span>
-        </div>
+            <div
+              className="relative overflow-hidden bg-[#111111] border rounded-xl p-6"
+              style={{ borderColor: 'rgba(34,197,94,.22)' }}
+            >
+              <div
+                aria-hidden
+                className="absolute inset-0 rounded-xl pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at 0% 0%, rgba(34,197,94,.06) 0%, transparent 55%)',
+                }}
+              />
+              <div className="relative flex items-start gap-4">
+                <div
+                  className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center mt-0.5"
+                  style={{
+                    background: 'rgba(34,197,94,.08)',
+                    border: '1px solid rgba(34,197,94,.18)',
+                  }}
+                >
+                  <ShieldCheck size={17} className="text-[#22c55e]" />
+                </div>
+                <div>
+                  <p
+                    className="f-mono text-[9px] text-[#22c55e] uppercase mb-2.5"
+                    style={{ letterSpacing: '0.14em' }}
+                  >
+                    Alex's Personal Guarantee
+                  </p>
+                  <p className="text-sm text-[#b5b9c4] leading-relaxed">
+                    If our full audit does not surface at least{' '}
+                    <span className="f-mono text-[#22c55e] font-semibold">
+                      {fmt(data.fitd_price * 3)}
+                    </span>
+                    {' '}in provable, quantified revenue leaks — I don't charge
+                    you. No invoice. You keep the diagnostic report.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
-        {/* THE CTA */}
-        <motion.button
-          onClick={onCTA}
-          whileHover={{ scale: 1.025, boxShadow: `0 0 52px ${T.red}44` }}
-          whileTap={{ scale: 0.97 }}
+          {/* ════════════════════════════════════════════════
+              7. INVESTMENT COMPARISON
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="mb-5"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              {/* Cost of inaction */}
+              <div
+                className="relative overflow-hidden bg-[#111111] border rounded-xl p-6"
+                style={{ borderColor: 'rgba(239,68,68,.15)' }}
+              >
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 100% 0%, rgba(239,68,68,.06) 0%, transparent 60%)',
+                  }}
+                />
+                <div className="relative">
+                  <p
+                    className="f-mono text-[9px] text-[#3b3f48] uppercase mb-3 leading-tight"
+                    style={{ letterSpacing: '0.12em' }}
+                  >
+                    Monthly Loss
+                    <br />
+                    <span style={{ color: '#252830' }}>(Doing nothing)</span>
+                  </p>
+                  <p
+                    className="f-mono font-bold text-[#ef4444] mb-1.5 leading-none"
+                    style={{ fontSize: 'clamp(1.55rem, 5.5vw, 2.1rem)' }}
+                  >
+                    {fmt(data.monthly_coi)}
+                  </p>
+                  <p className="f-mono text-[10px] text-[#3b3f48]">
+                    per month · ongoing · compounding
+                  </p>
+                </div>
+              </div>
+
+              {/* Audit investment */}
+              <div
+                className="relative overflow-hidden bg-[#111111] border rounded-xl p-6"
+                style={{ borderColor: 'rgba(34,197,94,.15)' }}
+              >
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 0% 0%, rgba(34,197,94,.06) 0%, transparent 60%)',
+                  }}
+                />
+                <div className="relative">
+                  <p
+                    className="f-mono text-[9px] text-[#3b3f48] uppercase mb-3 leading-tight"
+                    style={{ letterSpacing: '0.12em' }}
+                  >
+                    Your Investment
+                    <br />
+                    <span style={{ color: '#252830' }}>(One-time)</span>
+                  </p>
+                  <p
+                    className="f-mono font-bold text-[#22c55e] mb-1.5 leading-none"
+                    style={{ fontSize: 'clamp(1.55rem, 5.5vw, 2.1rem)' }}
+                  >
+                    {fmt(data.fitd_price)}
+                  </p>
+                  <p className="f-mono text-[10px] text-[#3b3f48]">
+                    one time · guaranteed ROI · zero risk
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ════════════════════════════════════════════════
+              REAL URGENCY — conditional render
+          ════════════════════════════════════════════════ */}
+          {data.real_urgency && (
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              variants={sectionReveal}
+              className="mb-5"
+            >
+              <div
+                className="flex items-start gap-3 bg-[#111111] border rounded-xl p-5"
+                style={{ borderColor: 'rgba(245,158,11,.14)' }}
+              >
+                <AlertTriangle
+                  size={14}
+                  className="text-[#f59e0b] flex-shrink-0 mt-0.5"
+                />
+                <p className="text-sm text-[#8a8f9c] leading-relaxed">
+                  {data.real_urgency}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ════════════════════════════════════════════════
+              8. PRIMARY CALL TO ACTION
+              Pulsing shadow. onClick MUST fire onCTA prop.
+          ════════════════════════════════════════════════ */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={sectionReveal}
+            className="pt-1 mb-10"
+          >
+            <motion.button
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              onClick={onCTA}
+              className="btn-pulse w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#22c55e] text-[#080a08] font-bold px-8 py-4 rounded-xl text-base transition-colors duration-150"
+              style={{ minWidth: 'min(100%, 300px)' }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = '#16a34a')
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = '#22c55e')
+              }
+            >
+              Stop the Revenue Bleed
+              <ArrowRight size={17} strokeWidth={2.5} />
+            </motion.button>
+
+            <div className="flex items-center gap-1.5 mt-5">
+              <Mail size={11} className="text-[#252830]" />
+              <p className="f-mono text-[10px] text-[#252830]">
+                Questions? Reply directly: {data.reply_email}
+              </p>
+            </div>
+          </motion.div>
+
+        </div>{/* /content column */}
+
+        {/* ════════════════════════════════════════════════
+            9. STICKY FOOTER
+            h-[60px] · fixed bottom-0 left-0 right-0 z-50
+            Desktop: pulsing dot + live counter + "lost since scan" + green CTA
+            Mobile:  live numeric only + compact "Claim →" button
+        ════════════════════════════════════════════════ */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#1a1a1a]"
           style={{
-            background:    `linear-gradient(135deg, ${T.red} 0%, #dc2626 60%, #b91c1c 100%)`,
-            border:        `1px solid ${T.red}44`,
-            borderRadius:  12,
-            padding:       "18px 52px",
-            color:         "#ffffff",
-            fontSize:      18,
-            fontWeight:    800,
-            fontFamily:    T.ui,
-            letterSpacing: "-0.01em",
-            cursor:        "pointer",
-            display:       "inline-flex",
-            alignItems:    "center",
-            gap:           10,
-            boxShadow:     `0 0 0 1px ${T.red}1a, 0 8px 40px ${T.red}2a`,
+            height: '60px',
+            background: 'rgba(17,17,17,0.95)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
           }}
         >
-          Stop the Revenue Bleed
-          <ArrowRight size={20} />
-        </motion.button>
+          <div
+            className="max-w-2xl mx-auto flex items-center justify-between h-full gap-3"
+            style={{ padding: '0 1rem' }}
+          >
 
-        {/* Guarantee echo */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 7, marginTop: 16, color: "#404040", fontSize: 12 }}>
-          <Shield size={12} color="#404040" />
-          <span>Protected by Alex's Personal Guarantee — 3× ROI or you pay nothing</span>
+            {/* Left: live counter */}
+            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+              {/* Pulsing dot — desktop only */}
+              <span className="hidden md:flex relative h-2 w-2 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-[#ef4444] opacity-65" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ef4444]" />
+              </span>
+
+              <span
+                className="f-mono font-bold text-[#ef4444] tabular-nums truncate"
+                style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1rem)' }}
+              >
+                {fmt(totalLost)}
+              </span>
+
+              <span
+                className="hidden md:inline f-mono text-[10px] text-[#3b3f48] whitespace-nowrap flex-shrink-0"
+                style={{ letterSpacing: '0.1em' }}
+              >
+                lost since scan
+              </span>
+            </div>
+
+            {/* Right: CTA */}
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={onCTA}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 bg-[#22c55e] text-[#080a08] font-bold px-4 py-2 rounded-lg text-sm transition-colors duration-150"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = '#16a34a')
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = '#22c55e')
+              }
+            >
+              <span className="hidden md:inline">Claim audit →</span>
+              <span className="md:hidden">Claim →</span>
+            </motion.button>
+
+          </div>
         </div>
-      </motion.section>
-    </div>
+
+      </div>{/* /root */}
+    </>
   );
 }
